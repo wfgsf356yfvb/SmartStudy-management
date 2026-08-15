@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}Super Admin Dashboard - PlaySchool{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>👑 Master Overview</h1>
+    <p>System statistics across all schools.</p>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid">
+    <div class="stat-card purple">
+        <div class="stat-icon">🏫</div>
+        <div class="stat-val">{{ stats.total_schools }}</div>
+        <div class="stat-label">Total Schools</div>
+    </div>
+    <div class="stat-card blue">
+        <div class="stat-icon">👤</div>
+        <div class="stat-val">{{ stats.total_admins }}</div>
+        <div class="stat-label">School Admins</div>
+    </div>
+    <div class="stat-card orange">
+        <div class="stat-icon">👨‍🏫</div>
+        <div class="stat-val">{{ stats.total_teachers }}</div>
+        <div class="stat-label">Total Staff</div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-icon">🧒</div>
+        <div class="stat-val">{{ stats.total_students }}</div>
+        <div class="stat-label">Total Students</div>
+    </div>
+</div>
+
+<!-- Recent Schools List -->
+<div class="card">
+    <div class="card-header">🏢 Recently Added Schools
+        <a href="{{ url_for('super_admin_schools') }}" class="btn-sm ml-auto">+ Manage Schools</a>
+    </div>
+    {% if recent_schools %}
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead><tr><th>School Name</th><th>Address</th><th>Date Joined</th></tr></thead>
+            <tbody>
+            {% for s in recent_schools %}
+            <tr>
+                <td><strong>{{ s.name }}</strong></td>
+                <td>{{ s.address }}</td>
+                <td>{{ s.created_at }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">📭 No schools found.</div>
+    {% endif %}
+</div>
+{% endblock %}

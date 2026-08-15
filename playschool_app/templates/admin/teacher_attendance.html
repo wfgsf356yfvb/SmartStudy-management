@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}Teacher Attendance{% endblock %}
+{% block content %}
+<div class="page-header" data-aos="fade-down">
+    <div>
+        <h1>Staff Attendance Hub</h1>
+        <p>Log and manage administrative attendance for active teachers.</p>
+    </div>
+</div>
+
+<div class="card" style="padding: 15px; max-width: 500px;" data-aos="fade-up">
+    <form method="GET" class="filter-bar" style="display: flex; gap: 15px; align-items: flex-end;">
+        <div class="form-group" style="margin:0; flex: 1;">
+            <label style="font-weight:700;">📅 Select Date</label>
+            <input type="date" name="date" value="{{ selected_date }}" onchange="this.form.submit()" style="padding: 12px;">
+        </div>
+    </form>
+</div>
+
+<form method="POST" action="{{ url_for('admin_teacher_attendance') }}" data-aos="fade-up" data-aos-delay="100">
+    <input type="hidden" name="mark_date" value="{{ selected_date }}">
+    
+    <div class="card" style="border-top: 4px solid var(--purple);">
+        <div class="card-header">
+            <span>👩‍🏫 Active Teachers · {{ selected_date }}</span>
+        </div>
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Teacher Name</th>
+                        <th>Email</th>
+                        <th>Daily Status</th>
+                        <th>Operation Remark</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in teachers %}
+                    {% set r = rec_map.get(t.id) %}
+                    <tr>
+                        <td style="font-weight:700; color: var(--dark-shade);">{{ t.name }}</td>
+                        <td style="color: var(--light-text); font-size: 13px;">{{ t.email }}</td>
+                        <td>
+                            <div style="display: flex; gap: 6px;">
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; background: #f0fdf4; padding: 6px 10px; border-radius: 8px; border: 1px solid #bbf7d0;">
+                                    <input type="radio" name="status_{{ t.id }}" value="present" {% if not r or r.status == 'present' %}checked{% endif %}> 
+                                    <span style="font-size: 13px; color: #166534; font-weight:600;">P</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; background: #fef2f2; padding: 6px 10px; border-radius: 8px; border: 1px solid #fecaca;">
+                                    <input type="radio" name="status_{{ t.id }}" value="absent" {% if r and r.status == 'absent' %}checked{% endif %}> 
+                                    <span style="font-size: 13px; color: #991b1b; font-weight:600;">A</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; background: #fffbeb; padding: 6px 10px; border-radius: 8px; border: 1px solid #fef08a;">
+                                    <input type="radio" name="status_{{ t.id }}" value="late" {% if r and r.status == 'late' %}checked{% endif %}> 
+                                    <span style="font-size: 13px; color: #854d0e; font-weight:600;">L</span>
+                                </label>
+                            </div>
+                        </td>
+                        <td>
+                            <input type="text" name="remark_{{ t.id }}" placeholder="Note..." value="{{ r.remark if r else '' }}" style="padding: 8px; font-size: 13px;">
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" style="text-align:center; color:#64748b; padding: 30px;">No active teachers found in database.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if teachers %}
+    <div style="text-align: right; margin-top: 15px;">
+        <button type="submit" class="btn-primary" style="background: var(--purple); padding: 14px 40px; font-weight:700; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(124, 58, 237, 0.3);">📋 Submit Official Records</button>
+    </div>
+    {% endif %}
+</form>
+{% endblock %}

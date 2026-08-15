@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}Register - PlaySchool{% endblock %}
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card wide">
+        <div class="auth-header">
+            <div class="auth-emoji">✨</div>
+            <h2>Create Account</h2>
+            <p>Join the PlaySchool family!</p>
+        </div>
+        <form method="POST" class="auth-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>👤 Full Name</label>
+                    <input type="text" name="name" placeholder="Your full name" required>
+                </div>
+                <div class="form-group">
+                    <label>📞 Phone</label>
+                    <input type="text" name="phone" pattern="[0-9]{10}" maxlength="10"  placeholder="Enter 10 digit" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>📧 Email</label>
+                <input type="email" name="email" placeholder="your@gmail.com" required>
+            </div>
+            <div class="form-group">
+                <label>🔑 Password</label>
+                <input type="password" name="password" minlength="8" pattern="(?=.*\d)(?=.*[a-zA-Z]).{8,}" title="Min 8 characters, including at least one letter and one number." placeholder="Min 8 characters (letter + number)" required>
+            </div>
+            <div class="form-group">
+                <label>🏫 Select Your School</label>
+                <select name="school_id" required>
+                    <option value="">-- Choose school --</option>
+                    {% for s in schools %}
+                    <option value="{{ s.id }}">{{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>👥 I am a...</label>
+                <select name="role" id="roleSelect" required onchange="toggleFields()">
+                    <option value="">-- Choose role --</option>
+                    <option value="teacher">👨‍🏫 Teacher</option>
+                    <option value="student">🧒 Student</option>
+                   
+                </select>
+            </div>
+            <div id="studentFields" style="display:none">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>🏫 Class</label>
+                        <select name="class_level">
+                            <option value="">-- Select Class --</option>
+                            <option value="nursery">🌸 Nursery</option>
+                            <option value="lkg">🌼 LKG</option>
+                            <option value="ukg">🌻 UKG</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>👪 Parent Name</label>
+                        <input type="text" name="parent_name" placeholder="Parent's name">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>📱 Parent Phone</label>
+                    <input type="text" name="parent_phone" placeholder="Parent's phone number">
+                </div>
+            </div>
+            <button type="submit" class="btn-auth">🎊 Create My Account!</button>
+        </form>
+        <div class="auth-footer">
+            Already have account? <a href="{{ url_for('login') }}">Login Here 🚀</a>
+        </div>
+    </div>
+</div>
+<script>
+function toggleFields() {
+    const role = document.getElementById('roleSelect').value;
+    document.getElementById('studentFields').style.display = role === 'student' ? 'block' : 'none';
+}
+</script>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+  <h2>Provision Tenant</h2>
+  <div id="alerts"></div>
+
+  <form id="prov-form" method="post">
+    <div class="form-group">
+      <label for="name">School Name</label>
+      <input class="form-control" id="name" name="name" required />
+    </div>
+    <div class="form-group">
+      <label for="subdomain">Subdomain (identifier)</label>
+      <input class="form-control" id="subdomain" name="subdomain" required />
+    </div>
+    <div class="form-group">
+      <label for="address">Address</label>
+      <input class="form-control" id="address" name="address" />
+    </div>
+    <div class="form-check">
+      <input type="checkbox" class="form-check-input" id="use_aws" name="use_aws" />
+      <label for="use_aws" class="form-check-label">Store credentials in AWS Secrets Manager</label>
+    </div>
+    <button class="btn btn-primary mt-3" type="submit">Provision</button>
+  </form>
+
+  <div id="job-status" style="margin-top:1rem; display:none;">
+    <h4>Provisioning Status</h4>
+    <div id="status-text">Pending...</div>
+    <pre id="status-result" style="white-space:pre-wrap;"></pre>
+  </div>
+
+  <script>
+  document.getElementById('prov-form').addEventListener('submit', async function(e){
+    e.preventDefault();
+    document.getElementById('alerts').innerHTML = '';
+    const form = e.target;
+    const data = new FormData(form);
+    const resp = await fetch('/super-admin/provision/start', { method:'POST', body: data });
+    if (resp.status === 202){
+      const body = await resp.json();
+      const jobId = body.job_id;
+      document.getElementById('job-status').style.display = 'block';
+      poll(jobId);
+    } else {
+      const txt = await resp.text();
+      document.getElementById('alerts').innerHTML = '<div class="alert alert-danger">Failed to start provisioning</div>';
+    }
+  });
+
+  async function poll(jobId){
+    const url = '/super-admin/provision/status/' + jobId;
+    const res = await fetch(url);
+    if (res.status !== 200){
+      document.getElementById('status-text').innerText = 'Job not found';
+      return;
+    }
+    const j = await res.json();
+    document.getElementById('status-text').innerText = j.status;
+    document.getElementById('status-result').innerText = JSON.stringify(j.result, null, 2);
+    if (j.status === 'pending' || j.status === 'running'){
+      setTimeout(()=>poll(jobId), 1500);
+    }
+  }
+  </script>
+</div>
+{% endblock %}

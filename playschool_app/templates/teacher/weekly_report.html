@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}Weekly Report - Teacher{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>📅 Weekly Progress Report</h1>
+    <p>Week {{ current_week }} — Update students' weekly performance to guide parents</p>
+</div>
+
+<div class="two-col">
+    <!-- Form -->
+    <div class="card">
+        <div class="card-header">📝 Add / Update Weekly Progress</div>
+        <form method="POST" class="form-body">
+            <div class="form-group">
+                <label>🧒 Select Student</label>
+                <select name="student_id" required>
+                    <option value="">-- Select Student --</option>
+                    {% for s in students %}
+                    <option value="{{ s.id }}">{{ s.name }} ({{ s.class_level.upper() if s.class_level else '-' }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>📊 Marks Obtained</label>
+                    <input type="number" name="marks_obtained" min="0" max="100" placeholder="e.g. 75" required>
+                </div>
+                <div class="form-group">
+                    <label>📋 Total Marks</label>
+                    <input type="number" name="total_marks" value="100" min="1" max="100">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>💬 Teacher Remarks (for parents)</label>
+                <textarea name="remarks" rows="3" placeholder="e.g. 'Very attentive this week. Needs to work on alphabets.'"></textarea>
+            </div>
+            <button type="submit" class="btn-primary" style="width:100%">💾 Save Weekly Report</button>
+        </form>
+    </div>
+
+    <!-- This week's reports -->
+    <div class="card">
+        <div class="card-header">📋 This Week's Reports (Week {{ current_week }})</div>
+        {% if weekly %}
+        <div class="weekly-list">
+            {% for w in weekly %}
+            <div class="weekly-item">
+                <div class="wi-top">
+                    <strong>{{ w.student_name }}</strong>
+                    <span class="class-tag {{ w.class_level }}">{{ w.class_level.upper() }}</span>
+                    <span class="grade-badge {{ 'grade-a' if w.grade in ['A+','A'] else ('grade-b' if w.grade in ['B+','B'] else 'grade-c') }}">
+                        {{ w.grade }}
+                    </span>
+                </div>
+                <div class="wi-score">{{ w.marks_obtained }}/{{ w.total_marks }} ({{ (w.marks_obtained/w.total_marks*100)|round|int }}%)</div>
+                {% if w.teacher_remarks %}
+                <div class="wi-remark">💬 {{ w.teacher_remarks }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">No reports added this week yet</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block title %}My Attendance History{% endblock %}
+{% block content %}
+<div class="page-header" data-aos="fade-down">
+    <div>
+        <h1>My Attendance Stats</h1>
+        <p>Monitor your school presence and progress.</p>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 24px;" data-aos="fade-up">
+    <!-- Stat Summary Cards -->
+    <div class="stats-grid" style="margin: 0; height: 100%; grid-template-columns: 1fr 1fr;">
+        <div class="stat-card green" style="padding: 16px;">
+            <div style="font-size: 28px;">✅</div>
+            <div class="stat-val" style="font-size: 24px;">{{ stats.present }}</div>
+            <div class="stat-label">Present</div>
+        </div>
+        <div class="stat-card red" style="padding: 16px;">
+            <div style="font-size: 28px;">❌</div>
+            <div class="stat-val" style="font-size: 24px;">{{ stats.absent }}</div>
+            <div class="stat-label">Absent</div>
+        </div>
+        <div class="stat-card yellow" style="padding: 16px;">
+            <div style="font-size: 28px;">⏰</div>
+            <div class="stat-val" style="font-size: 24px;">{{ stats.late }}</div>
+            <div class="stat-label">Late</div>
+        </div>
+        <div class="stat-card blue" style="padding: 16px;">
+            <div style="font-size: 28px;">📈</div>
+            <div class="stat-val" style="font-size: 24px;">{{ stats.pct }}%</div>
+            <div class="stat-label">Score</div>
+        </div>
+    </div>
+    
+    <!-- High End Pie Chart -->
+    <div class="card" style="margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
+        <div style="font-weight: 700; color: #64748b; margin-bottom: 10px; width: 100%; text-align: center;">🎯 Status Distribution</div>
+        <div style="width: 200px; height: 200px; position: relative;">
+            <canvas id="attendancePie"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const ctx = document.getElementById('attendancePie').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Present', 'Absent', 'Late'],
+            datasets: [{
+                data: [{{ stats.present }}, {{ stats.absent }}, {{ stats.late }}],
+                backgroundColor: ['#22c55e', '#ef4444', '#eab308'],
+                borderWidth: 0,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false } // keep it clean, use tooltips
+            },
+            cutout: '70%' // for ring look
+        }
+    });
+});
+</script>
+
+<div class="card" data-aos="fade-up" data-aos-delay="100">
+    <div class="card-header">📅 Recent Logs</div>
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Recorded By</th>
+                    <th>Remark</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in records %}
+                <tr>
+                    <td style="font-weight: 600;">{{ r.date }}</td>
+                    <td>
+                        {% if r.status == 'present' %}
+                            <span class="status-pill graded">Present</span>
+                        {% elif r.status == 'absent' %}
+                            <span class="status-pill missing">Absent</span>
+                        {% else %}
+                            <span class="status-pill submitted">Late</span>
+                        {% endif %}
+                    </td>
+                    <td>Teacher {{ r.teacher_name }}</td>
+                    <td style="font-style: italic; color: #64748b;">{{ r.remark or '-' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" style="text-align:center; color:#64748b; padding:20px;">No attendance has been recorded yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

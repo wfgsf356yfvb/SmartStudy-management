@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Privacy Policy{% endblock %}
+{% block content %}
+<div style="max-width:900px;margin:60px auto;padding:20px;">
+  <h1>Privacy Policy</h1>
+  <p>This is a sample privacy policy. Replace with your organization's legal text.</p>
+  <h3>Data Collected</h3>
+  <p>We collect user registration data (name, email, phone), student records, and usage analytics necessary to provide the Playschool service.</p>
+  <h3>Data Storage</h3>
+  <p>Data is stored in MySQL databases and optional object storage (S3). For production, tenant credentials should be stored securely in AWS Secrets Manager.</p>
+  <h3>Data Deletion</h3>
+  <p>Contact the administrator to request deletion of tenant data; processes for export and deletion must be implemented by the operator.</p>
+</div>
+{% endblock %}

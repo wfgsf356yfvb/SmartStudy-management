@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Make Announcement - PlaySchool{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📢 <span data-i18n="Make Announcement">Make Announcement</span></h1>
+</div>
+
+<div class="card">
+    <div class="card-header">📝 Create New Announcement</div>
+    <form method="POST" action="{{ url_for('teacher_announcement') }}" style="padding: 20px;">
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label class="form-label" style="display: block; font-weight: bold; margin-bottom: 5px;">Title</label>
+            <input type="text" name="title" class="form-input" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;" required placeholder="Announcement Title">
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label class="form-label" style="display: block; font-weight: bold; margin-bottom: 5px;">Content</label>
+            <textarea name="content" class="form-input" rows="4" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;" required placeholder="Enter announcement details here..."></textarea>
+        </div>
+        
+        <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+            <div class="form-group" style="flex: 1;">
+                <label class="form-label" style="display: block; font-weight: bold; margin-bottom: 5px;">Target Class</label>
+                <select name="target_class" class="form-input" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;" required>
+                    <option value="all">All Classes</option>
+                    <option value="nursery">Nursery</option>
+                    <option value="lkg">LKG</option>
+                    <option value="ukg">UKG</option>
+                </select>
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label class="form-label" style="display: block; font-weight: bold; margin-bottom: 5px;">Type</label>
+                <select name="announcement_type" class="form-input" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px;" required>
+                    <option value="general">General</option>
+                    <option value="notice">Notice</option>
+                    <option value="event">Event</option>
+                    <option value="holiday">Holiday</option>
+                </select>
+            </div>
+        </div>
+        
+        <button type="submit" class="btn-primary" style="background: #3498db; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+            🚀 Post Announcement
+        </button>
+    </form>
+</div>
+
+<div class="card" style="margin-top: 20px;">
+    <div class="card-header">📜 Your Past Announcements</div>
+    {% if announcements %}
+    <div style="padding: 10px 20px;">
+        {% for ann in announcements %}
+        <div style="border-bottom: 1px solid #eee; padding: 15px 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <h3 style="margin: 0; font-size: 16px;">{{ ann.title }}</h3>
+                <span class="badge" style="background: #e8f4f8; color: #2980b9; padding: 4px 8px; border-radius: 12px; font-size: 12px;">{{ ann.target_class|upper }}</span>
+            </div>
+            <p style="margin: 0 0 10px; color: #555;">{{ ann.content }}</p>
+            <div style="font-size: 12px; color: #999;">🗓️ {{ ann.created_at.strftime('%d %b %Y') if ann.created_at else '' }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">You haven't made any announcements yet.</div>
+    {% endif %}
+</div>
+{% endblock %}

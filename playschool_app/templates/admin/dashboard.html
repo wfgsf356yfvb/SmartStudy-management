@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard - PlaySchool{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>📊 <span data-i18n="Admin Dashboard">Admin Dashboard</span></h1>
+    <p><span data-i18n="Welcome back,">Welcome back,</span> {{ current_user.name }}!</p>
+</div>
+
+{% if current_school %}
+<div style="background: linear-gradient(to right, #ebf8e1, #f7fdf2); border-left: 5px solid #27ae60; padding: 15px 20px; border-radius: 8px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+    <div>
+        <strong style="color: #2c3e50; display:block;">School License Info</strong>
+        <span style="color:#7f8c8d; font-size: 13px;">Valid Until: {{ current_school.valid_until or 'Unknown' }}</span>
+    </div>
+    <a href="{{ url_for('admin_billing') }}" class="btn-sm" style="background: #27ae60; color:white; border:none; padding: 8px 15px; cursor: pointer; text-decoration:none; border-radius: 6px; font-weight:bold;">
+        💳 Extend License
+    </a>
+</div>
+{% endif %}
+
+<!-- Stats Grid -->
+<div class="stats-grid">
+    <div class="stat-card orange">
+        <div class="stat-icon">🧒</div>
+        <div class="stat-val">{{ stats.total_students }}</div>
+        <div class="stat-label" data-i18n="Total Students">Students Overview</div>
+        <div class="stat-sub" style="font-size:12px; font-weight:bold; color:#15803d; margin-top:4px;">
+            ✅ Active: {{ stats.active_students }} | ❌ Inactive: {{ stats.inactive_students }}
+        </div>
+        <div class="stat-sub" style="font-size:11px; opacity:0.8; margin-top:2px;">N:{{ stats.nursery_count }} | LKG:{{ stats.lkg_count }} | UKG:{{ stats.ukg_count }}</div>
+    </div>
+    <div class="stat-card purple">
+        <div class="stat-icon">👨‍🏫</div>
+        <div class="stat-val">{{ stats.total_teachers }}</div>
+        <div class="stat-label" data-i18n="Teachers">Teachers Overview</div>
+        <div class="stat-sub" style="font-size:12px; font-weight:bold; color:#15803d; margin-top:4px;">
+            ✅ Active: {{ stats.active_teachers }} | ❌ Inactive: {{ stats.inactive_teachers }}
+        </div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-icon">✔️</div>
+        <div class="stat-val">{{ stats.today_present }}</div>
+        <div class="stat-label">Today's Attendance</div>
+        <div class="stat-sub" style="font-size:12px; color:#b91c1c; font-weight:bold; margin-top:4px;">
+            Present: {{ stats.today_present }} | Absent: {{ stats.today_absent }}
+        </div>
+    </div>
+    <div class="stat-card blue">
+        <div class="stat-icon">💰</div>
+        <div class="stat-val">₹{{ "{:,.0f}".format(stats.collected_fees) }}</div>
+        <div class="stat-label">Fee Collection</div>
+        <div class="stat-sub" style="font-size:12px; font-weight:bold; color:#b45309; margin-top:4px;">
+            ⏳ Pending Verifications: {{ stats.pending_fees }}
+        </div>
+    </div>
+</div>
+
+<!-- Class breakdown -->
+<div class="two-col">
+    <div class="card">
+        <div class="card-header">🏫 <span data-i18n="Class-wise Students">Class-wise Students</span></div>
+        <div class="class-bars">
+            <div class="class-bar-item">
+                <span class="cb-label">🌸 <span data-i18n="Nursery">Nursery</span></span>
+                <div class="cb-track"><div class="cb-fill nursery" style="width:{{ (stats.nursery_count / (stats.total_students or 1) * 100)|round }}%"></div></div>
+                <span class="cb-val">{{ stats.nursery_count }}</span>
+            </div>
+            <div class="class-bar-item">
+                <span class="cb-label">🌼 <span data-i18n="LKG">LKG</span></span>
+                <div class="cb-track"><div class="cb-fill lkg" style="width:{{ (stats.lkg_count / (stats.total_students or 1) * 100)|round }}%"></div></div>
+                <span class="cb-val">{{ stats.lkg_count }}</span>
+            </div>
+            <div class="class-bar-item">
+                <span class="cb-label">🌻 <span data-i18n="UKG">UKG</span></span>
+                <div class="cb-track"><div class="cb-fill ukg" style="width:{{ (stats.ukg_count / (stats.total_students or 1) * 100)|round }}%"></div></div>
+                <span class="cb-val">{{ stats.ukg_count }}</span>
+            </div>
+        </div>
+        <div class="card-actions">
+            <a href="{{ url_for('admin_users') }}" class="btn-sm" data-i18n="View All Users">View All Users →</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">🏆 <span data-i18n="Top Students">Top Students</span></div>
+        {% if top_students %}
+        <div class="top-list">
+            {% for s in top_students %}
+            <div class="top-item">
+                <span class="top-rank">{% if loop.index==1 %}🥇{% elif loop.index==2 %}🥈{% elif loop.index==3 %}🥉{% else %}{{ loop.index }}{% endif %}</span>
+                <div class="top-info">
+                    <strong>{{ s.name }}</strong>
+                    <span class="class-tag {{ s.class_level }}">{{ s.class_level.upper() }}</span>
+                </div>
+                <span class="top-score">{{ s.avg_pct or 0 }}%</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">No graded submissions yet</div>
+        {% endif %}
+        <div class="card-actions">
+            <a href="{{ url_for('admin_reports') }}" class="btn-sm">Full Reports →</a>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Homework -->
+<div class="card">
+    <div class="card-header">📝 Recent Homework Assignments</div>
+    {% if recent_hw %}
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead><tr><th>Title</th><th>Teacher</th><th>Class</th><th>Type</th><th>Due Date</th></tr></thead>
+            <tbody>
+            {% for hw in recent_hw %}
+            <tr>
+                <td><strong>{{ hw.title }}</strong></td>
+                <td>{{ hw.teacher_name }}</td>
+                <td><span class="class-tag {{ hw.class_level }}">{{ hw.class_level.upper() }}</span></td>
+                <td><span class="type-badge">{{ hw.homework_type }}</span></td>
+                <td>{{ hw.due_date }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">📭 No homework assigned yet</div>
+    {% endif %}
+</div>
+
+<!-- Announcements -->
+<div class="card">
+    <div class="card-header">📢 Recent Announcements
+        <a href="{{ url_for('admin_announcement') }}" class="btn-sm ml-auto">+ New</a>
+    </div>
+    {% if announcements %}
+    {% for ann in announcements %}
+    <div class="announcement-card">
+        <div class="ann-title">{{ ann.title }}</div>
+        <div class="ann-content">{{ ann.content[:150] }}{% if ann.content|length > 150 %}...{% endif %}</div>
+        <div class="ann-meta">{{ ann.created_at.strftime('%d %b %Y') if ann.created_at else '' }}</div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state">No announcements yet</div>
+    {% endif %}
+</div>
+{% endblock %}

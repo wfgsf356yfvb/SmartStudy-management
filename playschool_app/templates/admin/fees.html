@@ -1,0 +1,327 @@
+{% extends 'base.html' %}
+{% block title %}Fee Structure Management - PlaySchool Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+.fees-admin-hero {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+    border-radius: 20px;
+    padding: 28px 32px;
+    color: #fff;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    box-shadow: 0 8px 32px rgba(15,52,96,0.4);
+}
+.fees-admin-hero h1 { font-size: 24px; margin: 0 0 6px; }
+.fees-admin-hero p  { margin: 0; opacity: 0.75; font-size: 14px; }
+
+.btn-add-fee {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.btn-add-fee:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102,126,234,0.5); }
+
+/* Form Card */
+.fee-form-card {
+    background: var(--card-bg, #fff);
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+    padding: 28px;
+    margin-bottom: 28px;
+    display: none;
+}
+.fee-form-card.visible { display: block; }
+.fee-form-card h2 { font-size: 18px; margin: 0 0 20px; color: var(--text-main,#222); }
+
+.form-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted, #666);
+    margin-bottom: 6px;
+}
+.form-group input, .form-group select, .form-group textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid rgba(0,0,0,0.10);
+    border-radius: 10px;
+    font-size: 14px;
+    background: var(--input-bg, #f8f9fa);
+    color: var(--text-main, #222);
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color: #667eea;
+    outline: none;
+}
+.form-actions { display: flex; gap: 12px; margin-top: 8px; }
+.btn-save {
+    background: linear-gradient(135deg, #11998e, #38ef7d);
+    color: #fff; border: none; border-radius: 10px;
+    padding: 11px 28px; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: transform 0.2s;
+}
+.btn-save:hover { transform: translateY(-2px); }
+.btn-cancel {
+    background: rgba(0,0,0,0.07);
+    color: var(--text-muted, #555); border: none; border-radius: 10px;
+    padding: 11px 22px; font-size: 14px; font-weight: 600;
+    cursor: pointer;
+}
+
+/* Fees Table */
+.fees-table-card {
+    background: var(--card-bg, #fff);
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    overflow: hidden;
+}
+.fees-table-header {
+    padding: 18px 24px;
+    font-size: 17px;
+    font-weight: 700;
+    border-bottom: 1px solid rgba(0,0,0,0.07);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.fees-table { width: 100%; border-collapse: collapse; }
+.fees-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted, #888);
+    background: rgba(0,0,0,0.03);
+}
+.fees-table td {
+    padding: 13px 16px;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    vertical-align: middle;
+}
+.fees-table tr:last-child td { border-bottom: none; }
+.fees-table tr:hover td { background: rgba(102,126,234,0.04); }
+
+.type-badge {
+    display: inline-block;
+    border-radius: 20px;
+    padding: 3px 14px;
+    font-size: 12px;
+    font-weight: 700;
+}
+.type-badge.full      { background: #d4edda; color: #155724; }
+.type-badge.half      { background: #fff3cd; color: #856404; }
+.type-badge.quarterly { background: #e8d4f5; color: #6a3093; }
+
+.class-badge {
+    display: inline-block;
+    border-radius: 6px;
+    padding: 2px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    background: rgba(102,126,234,0.12);
+    color: #667eea;
+}
+
+.btn-del {
+    background: #ffebee; color: #c62828;
+    border: none; border-radius: 8px;
+    padding: 6px 14px; font-size: 12px;
+    cursor: pointer; font-weight: 600;
+    transition: background 0.2s;
+}
+.btn-del:hover { background: #ffcdd2; }
+
+.fees-empty-table {
+    text-align: center; padding: 50px 20px;
+    color: var(--text-muted, #888);
+    font-size: 15px;
+}
+.fees-empty-table .big-icon { font-size: 52px; margin-bottom: 12px; }
+
+/* Divider legend per class */
+.class-section-row td {
+    background: rgba(102,126,234,0.06) !important;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 8px 16px;
+    color: #667eea;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="fees-admin-hero" data-aos="fade-down">
+    <div>
+        <h1>💰 Fee Structure Manager</h1>
+        <p>Set Full, Half-Yearly and Quarterly fees for each class level</p>
+    </div>
+    <button class="btn-add-fee" onclick="toggleForm()">➕ Add / Update Fee</button>
+</div>
+
+<!-- Add Fee Form -->
+<div class="fee-form-card" id="feeFormCard" data-aos="fade-up">
+    <h2>📋 Add / Update Fee Structure</h2>
+    <form method="POST" action="{{ url_for('admin_fees') }}">
+        <div class="form-grid-3">
+            <div class="form-group">
+                <label>Class Level *</label>
+                <select name="class_level" required>
+                    <option value="">Select Class</option>
+                    <option value="nursery">Nursery</option>
+                    <option value="lkg">LKG</option>
+                    <option value="ukg">UKG</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Fee Type *</label>
+                <select name="fee_type" required>
+                    <option value="">Select Type</option>
+                    <option value="full">Full Year (Annual)</option>
+                    <option value="half">Half Yearly</option>
+                    <option value="quarterly">Quarterly</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Label / Plan Name *</label>
+                <input type="text" name="label" placeholder="e.g. Annual Full Fee" required>
+            </div>
+            <div class="form-group">
+                <label>Total Amount (₹) *</label>
+                <input type="number" name="total_amount" step="0.01" min="0" placeholder="0.00" required>
+            </div>
+            <div class="form-group">
+                <label>Admission Fee (₹)</label>
+                <input type="number" name="admission_fee" step="0.01" min="0" placeholder="0.00">
+            </div>
+            <div class="form-group">
+                <label>Tuition Fee (₹)</label>
+                <input type="number" name="tuition_fee" step="0.01" min="0" placeholder="0.00">
+            </div>
+            <div class="form-group">
+                <label>Activity Fee (₹)</label>
+                <input type="number" name="activity_fee" step="0.01" min="0" placeholder="0.00">
+            </div>
+            <div class="form-group">
+                <label>Transport Fee (₹)</label>
+                <input type="number" name="transport_fee" step="0.01" min="0" placeholder="0.00">
+            </div>
+            <div class="form-group">
+                <label>Miscellaneous (₹)</label>
+                <input type="number" name="misc_fee" step="0.01" min="0" placeholder="0.00">
+            </div>
+            <div class="form-group">
+                <label>Due Date / Info</label>
+                <input type="text" name="due_date" placeholder="e.g. 1st April every year">
+            </div>
+        </div>
+        <div class="form-group" style="margin-bottom: 16px;">
+            <label>Additional Notes</label>
+            <textarea name="description" rows="2" placeholder="Any extra info for parents/students..."></textarea>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn-save">💾 Save Fee Structure</button>
+            <button type="button" class="btn-cancel" onclick="toggleForm()">Cancel</button>
+        </div>
+    </form>
+</div>
+
+<!-- Current Fee Table -->
+<div class="fees-table-card" data-aos="fade-up">
+    <div class="fees-table-header">📊 Current Fee Structures</div>
+    {% if fees %}
+    <table class="fees-table">
+        <thead>
+            <tr>
+                <th>Class</th>
+                <th>Type</th>
+                <th>Plan Name</th>
+                <th>Total</th>
+                <th>Tuition</th>
+                <th>Activity</th>
+                <th>Due Date</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set ns = namespace(last_class='') %}
+            {% for fee in fees %}
+            {% if fee.class_level != ns.last_class %}
+            {% set ns.last_class = fee.class_level %}
+            <tr class="class-section-row">
+                <td colspan="8">{{ fee.class_level.upper() }} CLASS</td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td><span class="class-badge">{{ fee.class_level.upper() }}</span></td>
+                <td>
+                    <span class="type-badge {{ fee.fee_type }}">
+                        {{ 'Full Year' if fee.fee_type == 'full' else ('Half Year' if fee.fee_type == 'half' else 'Quarterly') }}
+                    </span>
+                </td>
+                <td><strong>{{ fee.label }}</strong></td>
+                <td><strong>₹{{ "{:,.0f}".format(fee.total_amount) }}</strong></td>
+                <td>{% if fee.tuition_fee %}₹{{ "{:,.0f}".format(fee.tuition_fee) }}{% else %}—{% endif %}</td>
+                <td>{% if fee.activity_fee %}₹{{ "{:,.0f}".format(fee.activity_fee) }}{% else %}—{% endif %}</td>
+                <td>{{ fee.due_date or '—' }}</td>
+                <td>
+                    <a href="{{ url_for('delete_fee', fid=fee.id) }}"
+                       onclick="return confirm('Delete this fee entry?')"
+                       class="btn-del">🗑 Delete</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="fees-empty-table">
+        <div class="big-icon">🏷️</div>
+        <p>No fee structures added yet. Click <strong>Add / Update Fee</strong> to get started.</p>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleForm() {
+    const card = document.getElementById('feeFormCard');
+    card.classList.toggle('visible');
+    if (card.classList.contains('visible')) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+// Auto-open form if there are no fees
+{% if not fees %}
+window.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('feeFormCard').classList.add('visible');
+});
+{% endif %}
+</script>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Student Progress - Teacher{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>📊 Student Progress</h1>
+</div>
+<div class="filter-bar">
+    <a href="{{ url_for('teacher_progress') }}" class="filter-btn {% if class_filter=='all' %}active{% endif %}">All</a>
+    <a href="{{ url_for('teacher_progress', **{'class':'nursery'}) }}" class="filter-btn {% if class_filter=='nursery' %}active{% endif %}">🌸 Nursery</a>
+    <a href="{{ url_for('teacher_progress', **{'class':'lkg'}) }}" class="filter-btn {% if class_filter=='lkg' %}active{% endif %}">🌼 LKG</a>
+    <a href="{{ url_for('teacher_progress', **{'class':'ukg'}) }}" class="filter-btn {% if class_filter=='ukg' %}active{% endif %}">🌻 UKG</a>
+</div>
+
+<div class="progress-cards">
+{% for s in students %}
+<div class="progress-card">
+    <div class="pc-left">
+        <div class="pc-avatar {{ s.class_level }}">{{ s.name[0].upper() }}</div>
+        <div>
+            <div class="pc-name">{{ s.name }}</div>
+            <div class="pc-class"><span class="class-tag {{ s.class_level }}">{{ s.class_level.upper() if s.class_level else '-' }}</span></div>
+            {% if s.parent_name %}
+            <div class="pc-parent">👪 {{ s.parent_name }} · {{ s.parent_phone or '' }}</div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="pc-right">
+        <div class="pc-stats">
+            <div class="pc-stat-item">
+                <span class="pc-val">{{ s.total_hw or 0 }}</span>
+                <span class="pc-lbl">Total HW</span>
+            </div>
+            <div class="pc-stat-item">
+                <span class="pc-val">{{ s.graded or 0 }}</span>
+                <span class="pc-lbl">Graded</span>
+            </div>
+            <div class="pc-stat-item">
+                <span class="pc-val {% if s.avg_pct and s.avg_pct >= 80 %}text-green{% elif s.avg_pct and s.avg_pct >= 60 %}text-orange{% elif s.avg_pct %}text-red{% endif %}">
+                    {{ s.avg_pct or 'N/A' }}{% if s.avg_pct %}%{% endif %}
+                </span>
+                <span class="pc-lbl">Avg Score</span>
+            </div>
+        </div>
+        {% if s.avg_pct %}
+        <div class="pc-progress-bar">
+            <div class="pc-fill {% if s.avg_pct >= 80 %}green{% elif s.avg_pct >= 60 %}orange{% else %}red{% endif %}"
+                 style="width:{{ s.avg_pct }}%"></div>
+        </div>
+        <div class="pc-performance">
+            {% if s.avg_pct >= 80 %}🌟 Excellent!{% elif s.avg_pct >= 60 %}👍 Good{% elif s.avg_pct >= 40 %}📈 Needs Improvement{% else %}⚠️ Needs Attention{% endif %}
+        </div>
+        {% else %}
+        <div class="pc-performance text-muted">No grades yet</div>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<div class="empty-big">
+    <div class="empty-icon">🧒</div>
+    <h2>No students found!</h2>
+</div>
+{% endfor %}
+</div>
+{% endblock %}

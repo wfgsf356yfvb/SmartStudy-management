@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}My Homeworks - Teacher{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>📝 My Homeworks</h1>
+    <a href="{{ url_for('create_homework') }}" class="btn-primary">+ Assign New Homework</a>
+</div>
+
+{% if homeworks %}
+<div class="hw-grid">
+    {% for hw in homeworks %}
+    <div class="hw-card">
+        <div class="hw-card-top {{ hw.class_level }}">
+            <div class="hw-type-icon">{{ {'drawing':'🎨','writing':'✏️','reading':'📖','coloring':'🖍️','activity':'🎯','other':'📝'}.get(hw.homework_type,'📝') }}</div>
+            <div class="hw-class-tag">{{ hw.class_level.upper() }}</div>
+        </div>
+        <div class="hw-card-body">
+            <h3>{{ hw.title }}</h3>
+            <p class="hw-desc">{{ hw.description[:80] if hw.description else '' }}{% if hw.description and hw.description|length > 80 %}...{% endif %}</p>
+            <div class="hw-meta-row">
+                <span>📅 Due: <strong>{{ hw.due_date }}</strong></span>
+                <span>⭐ Max: <strong>{{ hw.max_marks }}</strong></span>
+            </div>
+            {% if hw.file_path %}
+            <a href="{{ url_for('uploaded_file', filename=hw.file_path) }}" class="file-link" target="_blank">📎 View Attachment</a>
+            {% endif %}
+            <div class="hw-submission-bar">
+                <div class="sub-counts">
+                    <span class="sub-total">{{ hw.sub_count }} submitted</span>
+                    <span class="sub-graded">{{ hw.graded_count or 0 }} graded</span>
+                </div>
+            </div>
+        </div>
+        <div class="hw-card-footer">
+            <a href="{{ url_for('hw_submissions', hw_id=hw.id) }}" class="btn-sm-full">👁️ View Submissions ({{ hw.sub_count }})</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-big">
+    <div class="empty-icon">📭</div>
+    <h2>No Homeworks Yet!</h2>
+    <p>Start by assigning your first homework to students.</p>
+    <a href="{{ url_for('create_homework') }}" class="btn-primary">+ Assign Homework</a>
+</div>
+{% endif %}
+{% endblock %}

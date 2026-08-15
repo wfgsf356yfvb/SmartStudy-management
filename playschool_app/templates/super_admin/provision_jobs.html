@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+  <h2>Provision Jobs</h2>
+  <table class="table table-striped">
+    <thead><tr><th>Job ID</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
+    <tbody>
+    {% for jid, j in jobs.items() %}
+      <tr>
+        <td><a href="/super-admin/provision/status/{{ jid }}">{{ jid }}</a></td>
+        <td>{{ j.status }}</td>
+        <td>{{ j.get('created_at', 'n/a') }}</td>
+        <td>
+          <form method="post" action="/super-admin/provision/retry/{{ jid }}" style="display:inline">
+            <button class="btn btn-sm btn-warning" type="submit">Retry</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

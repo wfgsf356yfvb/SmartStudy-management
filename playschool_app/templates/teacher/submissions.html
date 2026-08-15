@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}Submissions - {{ hw.title }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>📬 Submissions: {{ hw.title }}</h1>
+        <div class="hw-detail-meta">
+            <span class="class-tag {{ hw.class_level }}">{{ hw.class_level.upper() }}</span>
+            <span>Due: {{ hw.due_date }}</span>
+            <span>Max Marks: {{ hw.max_marks }}</span>
+        </div>
+    </div>
+    <a href="{{ url_for('teacher_homework') }}" class="btn-outline">← Back</a>
+</div>
+
+{% if hw.file_path %}
+<div class="card" style="padding:12px 20px;margin-bottom:16px">
+    📎 Reference file: <a href="{{ url_for('uploaded_file', filename=hw.file_path) }}" target="_blank" style="color:var(--primary)">View Uploaded Material</a>
+</div>
+{% endif %}
+
+{% if hw.description %}
+<div class="card" style="padding:12px 20px;margin-bottom:16px;background:var(--bg-light)">
+    📄 <strong>Instructions:</strong> {{ hw.description }}
+</div>
+{% endif %}
+
+<div class="submissions-grid">
+{% for s in students %}
+<div class="sub-card {{ 'graded' if s.marks is not none else ('submitted' if s.sub_id else 'missing') }}">
+    <div class="sub-card-header">
+        <div class="sub-avatar">{{ s.name[0].upper() }}</div>
+        <div class="sub-info">
+            <strong>{{ s.name }}</strong>
+            <div class="sub-meta">
+                <span class="class-tag {{ s.class_level }}">{{ s.class_level.upper() }}</span>
+                {% if s.parent_name %}<span>👪 {{ s.parent_name }}</span>{% endif %}
+            </div>
+        </div>
+        <div class="sub-status">
+            {% if s.marks is not none %}
+            <span class="status-pill graded">✅ Graded</span>
+            {% elif s.sub_id %}
+            <span class="status-pill submitted">📬 Submitted</span>
+            {% else %}
+            <span class="status-pill missing">❌ Missing</span>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if s.sub_id %}
+    <div class="sub-card-body">
+        <div class="sub-details">
+            <span>Submitted: {{ s.submitted_at.strftime('%d %b %Y %I:%M%p') if s.submitted_at else '-' }}</span>
+            {% if s.remarks %}
+            <div class="sub-remark">💬 "{{ s.remarks }}"</div>
+            {% endif %}
+            {% if s.sub_file %}
+            <a href="{{ url_for('uploaded_file', filename=s.sub_file) }}" class="btn-sm" target="_blank">📎 View Submission</a>
+            {% endif %}
+        </div>
+
+        {% if s.marks is not none %}
+        <div class="grade-display">
+            <div class="grade-circle {{ 'grade-a' if s.marks/hw.max_marks>=0.8 else ('grade-b' if s.marks/hw.max_marks>=0.6 else 'grade-c') }}">
+                {{ s.grade }}
+            </div>
+            <div>
+                <div class="grade-marks">{{ s.marks }}/{{ hw.max_marks }}</div>
+                {% if s.feedback %}<div class="grade-feedback">"{{ s.feedback }}"</div>{% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Grade form -->
+        <form method="POST" action="{{ url_for('grade_submission', sub_id=s.sub_id) }}" class="grade-form">
+            <div class="grade-inputs">
+                <input type="number" name="marks" placeholder="Marks (0-{{ hw.max_marks }})"
+                       min="0" max="{{ hw.max_marks }}" value="{{ s.marks or '' }}" required>
+                <input type="text" name="feedback" placeholder="Feedback / Comment"
+                       value="{{ s.feedback or '' }}">
+                <button type="submit" class="btn-sm btn-grade">{{ '✏️ Update' if s.marks is not none else '⭐ Grade' }}</button>
+            </div>
+        </form>
+    </div>
+    {% else %}
+    <div class="sub-card-body">
+        <div class="empty-state" style="padding:8px">Student hasn't submitted yet</div>
+    </div>
+    {% endif %}
+</div>
+{% endfor %}
+</div>
+{% endblock %}

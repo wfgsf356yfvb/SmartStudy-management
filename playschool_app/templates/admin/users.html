@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}Manage Users - Admin{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>👥 Manage Users</h1>
+    <a href="{{ url_for('register') }}" class="btn-primary">+ Add User</a>
+</div>
+
+<!-- Filters -->
+<div class="filter-bar">
+    <a href="{{ url_for('admin_users') }}" class="filter-btn {% if role_filter=='all' %}active{% endif %}">All Users</a>
+    <a href="{{ url_for('admin_users', role='teacher') }}" class="filter-btn {% if role_filter=='teacher' %}active{% endif %}">👨‍🏫 Teachers</a>
+    <a href="{{ url_for('admin_users', role='student') }}" class="filter-btn {% if role_filter=='student' %}active{% endif %}">🧒 Students</a>
+    <a href="{{ url_for('admin_users', role='student', **{'class':'nursery'}) }}" class="filter-btn {% if class_filter=='nursery' %}active{% endif %}">🌸 Nursery</a>
+    <a href="{{ url_for('admin_users', role='student', **{'class':'lkg'}) }}" class="filter-btn {% if class_filter=='lkg' %}active{% endif %}">🌼 LKG</a>
+    <a href="{{ url_for('admin_users', role='student', **{'class':'ukg'}) }}" class="filter-btn {% if class_filter=='ukg' %}active{% endif %}">🌻 UKG</a>
+</div>
+
+<div class="card">
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>#</th><th>Name</th><th>Email</th><th>Phone</th>
+                    <th>Role</th><th>Class</th><th>Parent</th><th>Status</th><th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for u in users %}
+            <tr class="{{ 'inactive-row' if not u.is_active }}">
+                <td>{{ loop.index }}</td>
+                <td>
+                    <div class="user-mini">
+                        <div class="mini-avatar {{ u.role }}">{{ u.name[0].upper() }}</div>
+                        <strong>{{ u.name }}</strong>
+                    </div>
+                </td>
+                <td>{{ u.email }}</td>
+                <td>{{ u.phone or '-' }}</td>
+                <td><span class="role-badge {{ u.role }}">{{ u.role.capitalize() }}</span></td>
+                <td>
+                    {% if u.class_level %}
+                    <span class="class-tag {{ u.class_level }}">{{ u.class_level.upper() }}</span>
+                    {% else %}-{% endif %}
+                </td>
+                <td>
+                    {% if u.parent_name %}
+                    <small>{{ u.parent_name }}<br>{{ u.parent_phone or '' }}</small>
+                    {% else %}-{% endif %}
+                </td>
+                <td>
+                    <span class="status-dot {{ 'active' if u.is_active else 'inactive' }}">
+                        {{ '✅ Active' if u.is_active else '❌ Inactive' }}
+                    </span>
+                </td>
+                <td>
+                    {% if u.role != 'admin' %}
+                    <div class="action-btns">
+                        <a href="{{ url_for('toggle_user', uid=u.id) }}" class="btn-icon {{ 'btn-warn' if u.is_active else 'btn-success' }}"
+                           title="{{ 'Deactivate' if u.is_active else 'Activate' }}">
+                            {{ '🔒' if u.is_active else '🔓' }}
+                        </a>
+                        <a href="{{ url_for('delete_user', uid=u.id) }}" class="btn-icon btn-danger"
+                           onclick="return confirm('Delete {{ u.name }}? This cannot be undone!')"
+                           title="Delete">🗑️</a>
+                    </div>
+                    {% else %}
+                    <span class="text-muted">Protected</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="9" class="empty-state">No users found</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

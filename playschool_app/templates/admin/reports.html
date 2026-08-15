@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}Reports - Admin{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>📈 School Reports</h1>
+    <p>Complete performance overview for all classes</p>
+</div>
+
+<!-- Class Stats -->
+<div class="card">
+    <div class="card-header">🏫 Class-wise Performance Summary</div>
+    <div class="class-report-grid">
+        {% for cs in class_stats %}
+        {% if cs.class_level %}
+        <div class="class-report-card {{ cs.class_level }}">
+            <div class="cr-class">{% if cs.class_level=='nursery' %}🌸{% elif cs.class_level=='lkg' %}🌼{% else %}🌻{% endif %} {{ cs.class_level.upper() }}</div>
+            <div class="cr-stats">
+                <div class="cr-stat"><span class="cr-val">{{ cs.students }}</span><span class="cr-lbl">Students</span></div>
+                <div class="cr-stat"><span class="cr-val">{{ cs.homeworks or 0 }}</span><span class="cr-lbl">Homeworks</span></div>
+                <div class="cr-stat"><span class="cr-val">{{ cs.submissions or 0 }}</span><span class="cr-lbl">Submissions</span></div>
+                <div class="cr-stat"><span class="cr-val">{{ cs.avg_pct or 'N/A' }}{% if cs.avg_pct %}%{% endif %}</span><span class="cr-lbl">Avg Score</span></div>
+            </div>
+            {% if cs.avg_pct %}
+            <div class="cr-bar"><div class="cr-fill" style="width:{{ cs.avg_pct }}%"></div></div>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Student-wise progress -->
+<div class="card">
+    <div class="card-header">🧒 Student-wise Progress</div>
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr><th>Student</th><th>Class</th><th>Parent</th><th>HW Received</th><th>Graded</th><th>Avg Score</th><th>Grade</th></tr>
+            </thead>
+            <tbody>
+            {% for s in student_progress %}
+            <tr>
+                <td><strong>{{ s.name }}</strong></td>
+                <td><span class="class-tag {{ s.class_level }}">{{ s.class_level.upper() if s.class_level else '-' }}</span></td>
+                <td><small>{{ s.parent_name or '-' }}</small></td>
+                <td>{{ s.total_hw or 0 }}</td>
+                <td>{{ s.graded or 0 }}</td>
+                <td>
+                    {% if s.avg_pct %}
+                    <div class="inline-bar">
+                        <div class="ib-fill {% if s.avg_pct >= 80 %}green{% elif s.avg_pct >= 60 %}orange{% else %}red{% endif %}" style="width:{{ s.avg_pct }}%"></div>
+                    </div>
+                    {{ s.avg_pct }}%
+                    {% else %}
+                    <span class="text-muted">Not graded</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if s.avg_pct %}
+                    <span class="grade-badge {% if s.avg_pct>=80 %}grade-a{% elif s.avg_pct>=60 %}grade-b{% else %}grade-c{% endif %}">
+                        {% if s.avg_pct>=90 %}A+{% elif s.avg_pct>=80 %}A{% elif s.avg_pct>=70 %}B+{% elif s.avg_pct>=60 %}B{% elif s.avg_pct>=50 %}C{% else %}D{% endif %}
+                    </span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" class="empty-state">No student data available</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Manage Admins - PlaySchool{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>👥 Manage School Admins</h1>
+    <p>View, edit and delete accounts representing school principals.</p>
+</div>
+
+<div class="card">
+    <div class="card-header">👤 Existing School Admins
+        <a href="{{ url_for('super_admin_create_admin') }}" class="btn-sm ml-auto">+ Create Admin</a>
+    </div>
+    {% if admins %}
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Contact Info</th>
+                    <th>School Assigned</th>
+                    <th>Joined At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for adm in admins %}
+            <tr>
+                <td><strong>{{ adm.name }}</strong></td>
+                <td>
+                   📧 {{ adm.email }}<br>
+                   📞 {{ adm.phone }}
+                </td>
+                <td><span class="type-badge" style="background:#27ae60;">{{ adm.school_name if adm.school_name else 'Unassigned' }}</span></td>
+                <td>{{ adm.created_at }}</td>
+                <td>
+                    <div style="display: flex; gap: 5px;">
+                       <a href="{{ url_for('super_admin_edit_admin', admin_id=adm.id) }}" class="btn-sm" style="background:#3498db;">✏️ Edit</a>
+                       <a href="{{ url_for('super_admin_delete_admin', admin_id=adm.id) }}" class="btn-sm" style="background:#e74c3c;" onclick="return confirm('Are you sure you want to DELETE this admin account?');">🗑️ Delete</a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">📭 No school admins deployed yet.</div>
+    {% endif %}
+</div>
+{% endblock %}

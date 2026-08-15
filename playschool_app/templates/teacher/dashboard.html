@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}Teacher Dashboard{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>🏠 <span data-i18n="Teacher Dashboard">Teacher Dashboard</span></h1>
+    <p><span data-i18n="Hello">Hello</span> {{ current_user.name }}! <span data-i18n="Inspire Minds">Ready to inspire little minds today?</span> 🌟</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card orange">
+        <div class="stat-icon">📝</div>
+        <div class="stat-val">{{ stats.my_homework }}</div>
+        <div class="stat-label" data-i18n="My Homeworks">My Homeworks</div>
+    </div>
+    <div class="stat-card red">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-val">{{ stats.pending_grade }}</div>
+        <div class="stat-label" data-i18n="Pending Grading">Pending Grading</div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-icon">🌸</div>
+        <div class="stat-val">{{ stats.students_nursery }}</div>
+        <div class="stat-label" data-i18n="Nursery Students">Nursery Students</div>
+    </div>
+    <div class="stat-card purple">
+        <div class="stat-icon">🌼</div>
+        <div class="stat-val">{{ stats.students_lkg }}</div>
+        <div class="stat-label" data-i18n="LKG Students">LKG Students</div>
+    </div>
+    <div class="stat-card blue">
+        <div class="stat-icon">🌻</div>
+        <div class="stat-val">{{ stats.students_ukg }}</div>
+        <div class="stat-label" data-i18n="UKG Students">UKG Students</div>
+    </div>
+</div>
+
+<div class="two-col">
+    <div class="card">
+        <div class="card-header">📝 Recent Homeworks
+            <a href="{{ url_for('create_homework') }}" class="btn-sm ml-auto">+ New</a>
+        </div>
+        {% if recent_hw %}
+        {% for hw in recent_hw %}
+        <div class="hw-mini">
+            <div class="hw-mini-icon">{{ {'drawing':'🎨','writing':'✏️','reading':'📖','coloring':'🖍️','activity':'🎯'}.get(hw.homework_type, '📝') }}</div>
+            <div class="hw-mini-info">
+                <div class="hw-mini-title">{{ hw.title }}</div>
+                <div class="hw-mini-meta">{{ hw.class_level.upper() }} · Due {{ hw.due_date }} · {{ hw.sub_count }} submitted</div>
+            </div>
+            <a href="{{ url_for('hw_submissions', hw_id=hw.id) }}" class="btn-icon">👁️</a>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty-state">No homework yet. <a href="{{ url_for('create_homework') }}">Create one!</a></div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-header">📢 Announcements</div>
+        {% if announcements %}
+        {% for ann in announcements %}
+        <div class="announcement-card">
+            <div class="ann-title">{{ ann.title }}</div>
+            <div class="ann-content">{{ ann.content[:100] }}{% if ann.content|length > 100 %}...{% endif %}</div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty-state">No announcements</div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="quick-actions">
+    <div class="qa-header">⚡ <span data-i18n="Quick Actions">Quick Actions</span></div>
+    <div class="qa-grid">
+        <a href="{{ url_for('create_homework') }}" class="qa-card orange">
+            <div class="qa-icon">📝</div>
+            <div data-i18n="Assign Homework">Assign Homework</div>
+        </a>
+        <a href="{{ url_for('teacher_progress') }}" class="qa-card purple">
+            <div class="qa-icon">📊</div>
+            <div data-i18n="View Progress">View Progress</div>
+        </a>
+        <a href="{{ url_for('weekly_report') }}" class="qa-card green">
+            <div class="qa-icon">📅</div>
+            <div data-i18n="Weekly Report">Weekly Report</div>
+        </a>
+        <a href="{{ url_for('teacher_homework') }}" class="qa-card blue">
+            <div class="qa-icon">📬</div>
+            <div data-i18n="All Submissions">All Submissions</div>
+        </a>
+    </div>
+</div>
+{% endblock %}

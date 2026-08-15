@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Temporarily Suspended - PlaySchool</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body { display: flex; align-items: center; justify-content: center; height: 100vh; background: #f7f9fb; margin: 0; font-family: 'Inter', sans-serif; text-align: center;}
+        .lock-card { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 500px; }
+        .lock-icon { font-size: 60px; margin-bottom: 20px; animation: shake 0.5s infinite alternate; }
+        @keyframes shake { 0% {transform: rotate(-5deg);} 100% {transform: rotate(5deg);} }
+        h1 { color: #e74c3c; margin-bottom: 10px;}
+        p { color: #666; line-height: 1.6; }
+        .meta { background: #fdf2f2; color: #c0392b; padding: 10px; border-radius: 8px; margin: 20px 0; font-weight: bold; }
+        .btn-pay { display: inline-block; background: #27ae60; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; margin-top: 20px; font-weight:bold; transition: 0.3s; }
+        .btn-pay:hover { background: #219150; transform: translateY(-2px); }
+        .btn-logout { display: block; margin-top: 15px; color: #95a5a6; text-decoration: underline; cursor: pointer; font-size: 14px;}
+    </style>
+</head>
+<body>
+    <div class="lock-card">
+        <div class="lock-icon">🛑</div>
+        <h1>Access Revoked</h1>
+        <p>The subscription for <strong>{{ school.name if school else 'Your School' }}</strong> has expired or been deactivated by administration.</p>
+        
+        <div class="meta">
+            Valid Until: {{ school.valid_until if school and school.valid_until else 'N/A' }}
+        </div>
+        
+        <p>Please contact your School Administrator to renew authorization to this portal.</p>
+
+        {% if session.get('role') == 'admin' %}
+        <a href="{{ url_for('admin_billing') }}" class="btn-pay">💳 Pay & Renew Access Now</a>
+        {% endif %}
+        
+        <a href="{{ url_for('logout') }}" class="btn-logout">Logout Session</a>
+    </div>
+</body>
+</html>

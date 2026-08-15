@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block title %}Billing & Renewals - PlaySchool{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>💳 Subscription & Billing</h1>
+    <p>Manage your school access validity and renewals.</p>
+</div>
+
+<div class="two-col">
+    <!-- Column 1: Current Status and Renew Request -->
+    <div class="card" style="flex:1.2;">
+        <div class="card-header">📅 Service Validity</div>
+        <div class="card-body" style="padding: 20px; text-align:center;">
+            <div style="font-size: 14px; color: #666;">Current Expiry Date</div>
+            <h2 style="margin: 10px 0; color: {% if school.subscription_status=='inactive' %}#e74c3c{% else %}#27ae60{% endif %}; font-size: 32px;">
+                {{ school.valid_until or 'Not set' }}
+            </h2>
+            <div class="type-badge" style="background:{% if school.subscription_status=='inactive' %}#e74c3c{% else %}#27ae60{% endif %}; color: white;">
+                Status: {{ school.subscription_status | upper }}
+            </div>
+        </div>
+        
+        <!-- visual Payment Step -->
+        <div class="card-header" style="border-top: 1px solid #eee; background: #f1fcf4;">
+            💸 Step 1: Pay Using Scan & Pay
+        </div>
+        <div class="card-body" style="padding: 20px; text-align:center; background: #f9fffb;">
+            <p style="margin-bottom: 10px; font-size: 14px; color: #27ae60; font-weight: bold;">Scan QR with GPay / PhonePe / Paytm</p>
+            {% set upi_id = config['UPI_ID'] %}
+            {% set upi_name = config['UPI_NAME'] %}
+            {% set qr_data = 'upi://pay?pa=' ~ upi_id ~ '&pn=' ~ upi_name ~ '&tn=SchoolRenewal' %}
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={{ qr_data|urlencode }}" 
+                 alt="Payment QR" 
+                 style="border: 4px solid white; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin: 10px auto;">
+            <div style="margin-top: 10px; font-size: 13px; color: #7f8c8d;">UPI ID: <strong>{{ upi_id }}</strong></div>
+        </div>
+
+        <div class="card-header" style="border-top: 1px solid #eee;">🚀 Step 2: Submit Transaction Logs</div>
+        <div class="card-body" style="padding: 20px;">
+            <form method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label>💸 Confirmed Amount Paid (INR)</label>
+                    <input type="number" name="amount" placeholder="e.g. 5000" required style="width:100%; padding: 10px; border-radius: 8px; margin-bottom:15px;">
+                </div>
+                <div class="form-group">
+                    <label>📸 Upload Payment Screenshot</label>
+                    <input type="file" name="screenshot" accept="image/*" required style="width:100%; background:#f7f9fb; padding: 10px; border: 1px dashed #bdc3c7; border-radius: 8px; margin-bottom:15px;">
+                </div>
+                <div class="form-group">
+                    <label>📄 Additional Reference (Optional)</label>
+                    <textarea name="notes" rows="2" placeholder="Any message for super admin..." style="width:100%; padding: 10px; border-radius: 8px;"></textarea>
+                </div>
+                <button type="submit" class="btn-auth" style="width:100%; background: linear-gradient(to right, #27ae60, #2ecc71); margin-top:15px; border:none; color:white; font-weight:bold; padding: 15px; border-radius:8px; cursor:pointer; font-size:16px; box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);">
+                    Confirm Payment Sent ✅
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Column 2: History -->
+    <div class="card" style="flex: 1.5;">
+        <div class="card-header">📜 Payment Logs</div>
+        {% if payments %}
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in payments %}
+                    <tr>
+                        <td>{{ p.payment_date }}</td>
+                        <td><strong>₹{{ p.amount }}</strong></td>
+                        <td>
+                            <span class="type-badge" style="background: {% if p.status == 'approved' %}#27ae60{% else %}#f39c12{% endif %};">
+                                {{ p.status | capitalize }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">No previous payments found.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

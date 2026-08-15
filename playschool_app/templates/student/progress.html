@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block title %}My Progress - PlaySchool{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>⭐ My Progress</h1>
+    <p>See how amazing you are doing! 🌟</p>
+</div>
+
+<!-- Overall Score Banner -->
+<div class="progress-hero">
+    <div class="ph-score">
+        <div class="ph-big {% if overall_avg >= 80 %}text-green{% elif overall_avg >= 60 %}text-orange{% else %}text-red{% endif %}">
+            {{ overall_avg }}%
+        </div>
+        <div class="ph-label">Overall Average</div>
+    </div>
+    <div class="ph-message">
+        {% if overall_avg >= 90 %}🏆 Outstanding! You are a superstar!
+        {% elif overall_avg >= 80 %}🌟 Excellent work! Keep it up!
+        {% elif overall_avg >= 70 %}👍 Good job! You're doing great!
+        {% elif overall_avg >= 60 %}📈 Nice effort! Keep practising!
+        {% elif overall_avg > 0 %}💪 Don't give up! You can do it!
+        {% else %}📚 Complete your homework to see your score!
+        {% endif %}
+    </div>
+    <div class="progress-bar-big">
+        <div class="pbb-fill {% if overall_avg >= 80 %}green{% elif overall_avg >= 60 %}orange{% else %}red{% endif %}"
+             style="width: {{ overall_avg }}%"></div>
+    </div>
+</div>
+
+<div class="two-col">
+    <!-- Homework Grades -->
+    <div class="card">
+        <div class="card-header">📝 Homework Grades</div>
+        {% if grades %}
+        <div class="grades-timeline">
+            {% for g in grades %}
+            <div class="gt-item">
+                <div class="gt-icon">{{ {'drawing':'🎨','writing':'✏️','reading':'📖','coloring':'🖍️','activity':'🎯','other':'📝'}.get(g.homework_type,'📝') }}</div>
+                <div class="gt-body">
+                    <div class="gt-title">{{ g.title }}</div>
+                    <div class="gt-date">{{ g.graded_at.strftime('%d %b %Y') if g.graded_at else '-' }}</div>
+                    {% if g.feedback %}<div class="gt-feedback">💬 {{ g.feedback }}</div>{% endif %}
+                </div>
+                <div class="gt-grade {{ 'grade-a' if g.grade in ['A+','A'] else ('grade-b' if g.grade in ['B+','B'] else 'grade-c') }}">
+                    <div class="gt-g">{{ g.grade }}</div>
+                    <div class="gt-m">{{ g.marks }}/{{ g.max_marks }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">No graded homework yet!</div>
+        {% endif %}
+    </div>
+
+    <div>
+        <!-- Weekly Progress -->
+        <div class="card" style="margin-bottom:16px">
+            <div class="card-header">📅 Weekly Reports (from Teacher)</div>
+            {% if weekly %}
+            <div class="weekly-progress-list">
+                {% for w in weekly %}
+                <div class="wpl-item">
+                    <div class="wpl-week">Week {{ w.week_number }}, {{ w.year }}</div>
+                    <div class="wpl-bar-wrap">
+                        <div class="wpl-bar">
+                            <div class="wpl-fill {% if w.marks_obtained/w.total_marks >= 0.8 %}green{% elif w.marks_obtained/w.total_marks >= 0.6 %}orange{% else %}red{% endif %}"
+                                 style="width:{{ (w.marks_obtained/w.total_marks*100)|round }}%"></div>
+                        </div>
+                        <span class="wpl-score">{{ w.marks_obtained }}/{{ w.total_marks }}</span>
+                        <span class="grade-badge {{ 'grade-a' if w.grade in ['A+','A'] else ('grade-b' if w.grade in ['B+','B'] else 'grade-c') }}">{{ w.grade }}</span>
+                    </div>
+                    {% if w.teacher_remarks %}
+                    <div class="wpl-remark">
+                        <span class="wpl-teacher">👩‍🏫 Teacher says:</span> {{ w.teacher_remarks }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">No weekly reports yet!</div>
+            {% endif %}
+        </div>
+
+        <!-- Game Progress -->
+        <div class="card">
+            <div class="card-header">🎮 My Game Scores</div>
+            {% if game_stats %}
+            <div class="game-score-list">
+                {% for g in game_stats %}
+                <div class="gsl-item">
+                    <div class="gsl-name">{{ g.game_name }}</div>
+                    <div class="gsl-stars">
+                       {% for i in range((g.stars|int) if (g.stars|int) <= 5 else 5) %}⭐{% endfor %}
+                    </div>
+                    <div class="gsl-best">Best: {{ g.best }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">Play games to earn stars! 🌟</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

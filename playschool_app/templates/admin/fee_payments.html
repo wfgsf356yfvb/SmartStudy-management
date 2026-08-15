@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% block title %}Student Fee Payments - PlaySchool{% endblock %}
+
+{% block extra_css %}
+<style>
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 12px;
+    display: inline-block;
+}
+.status-pending { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+.status-paid { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+.status-overdue { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+.filter-bar {
+    display: flex;
+    gap: 15px;
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #eee;
+    align-items: center;
+}
+.filter-bar select {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: white;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>💰 <span data-i18n="Student Fee Payments">Student Fee Payments</span></h1>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid" style="margin-bottom: 25px;">
+    <div class="stat-card green">
+        <div class="stat-icon">💵</div>
+        <div class="stat-val">₹{{ "{:,.0f}".format(stats.total_collected or 0) }}</div>
+        <div class="stat-label">Total Collected</div>
+    </div>
+    <div class="stat-card blue">
+        <div class="stat-icon">📈</div>
+        <div class="stat-val">₹{{ "{:,.0f}".format(stats.month_collection or 0) }}</div>
+        <div class="stat-label">This Month</div>
+    </div>
+    <div class="stat-card orange">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-val">₹{{ "{:,.0f}".format(stats.pending_amount or 0) }}</div>
+        <div class="stat-label">Pending Amount</div>
+    </div>
+    <div class="stat-card red">
+        <div class="stat-icon">⚠️</div>
+        <div class="stat-val">{{ stats.overdue_count or 0 }}</div>
+        <div class="stat-label">Overdue Count</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        💳 Payment Records
+    </div>
+    <div class="filter-bar">
+        <form method="GET" action="" style="display: flex; gap: 15px; width: 100%;">
+            <div>
+                <label style="font-weight: bold; margin-right: 5px; font-size: 14px;">Class:</label>
+                <select name="class_filter" onchange="this.form.submit()">
+                    <option value="all" {% if class_filter == 'all' %}selected{% endif %}>All Classes</option>
+                    <option value="nursery" {% if class_filter == 'nursery' %}selected{% endif %}>Nursery</option>
+                    <option value="lkg" {% if class_filter == 'lkg' %}selected{% endif %}>LKG</option>
+                    <option value="ukg" {% if class_filter == 'ukg' %}selected{% endif %}>UKG</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-weight: bold; margin-right: 5px; font-size: 14px;">Status:</label>
+                <select name="status_filter" onchange="this.form.submit()">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="paid" {% if status_filter == 'paid' %}selected{% endif %}>Paid</option>
+                    <option value="overdue" {% if status_filter == 'overdue' %}selected{% endif %}>Overdue</option>
+                </select>
+            </div>
+        </form>
+    </div>
+    
+    {% if payments %}
+    <div class="table-responsive">
+        <table class="data-table" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>Class</th>
+                    <th>Mode</th>
+                    <th>Amount</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Receipt No.</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in payments %}
+                <tr>
+                    <td><strong>{{ p.student_name }}</strong></td>
+                    <td><span class="badge class-tag {{ p.class_level }}">{{ p.class_level.upper() }}</span></td>
+                    <td>{{ p.payment_mode|title if p.payment_mode else '-' }}</td>
+                    <td>₹{{ "{:,.0f}".format(p.amount_paid) if p.amount_paid else '-' }}</td>
+                    <td>{{ p.payment_date or '-' }}</td>
+                    <td>
+                        {% if p.status == 'paid' %}
+                            <span class="status-badge status-paid">PAID</span>
+                        {% elif p.status == 'overdue' %}
+                            <span class="status-badge status-overdue">OVERDUE</span>
+                        {% else %}
+                            <span class="status-badge status-pending">PENDING</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ p.receipt_no or '-' }}</td>
+                    <td>
+                        {% if p.status == 'pending' %}
+                            <a href="{{ url_for('admin_verify_payment', payment_id=p.id) }}" class="btn-sm" style="background: #27ae60; color: white; padding: 4px 8px; border-radius: 4px; text-decoration: none; font-size: 12px;">✅ Verify</a>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">No payment records found for the selected filters.</div>
+    {% endif %}
+</div>
+
+{% endblock %}

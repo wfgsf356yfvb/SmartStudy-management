@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}My Homework - PlaySchool{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>📚 My Homework</h1>
+</div>
+
+<div class="tab-bar">
+    <a href="{{ url_for('student_homework', tab='pending') }}" class="tab-btn {% if tab=='pending' %}active{% endif %}">
+        ⏳ Pending {% if pending %}<span class="tab-count">{{ pending|length }}</span>{% endif %}
+    </a>
+    <a href="{{ url_for('student_homework', tab='submitted') }}" class="tab-btn {% if tab=='submitted' %}active{% endif %}">
+        ✅ Submitted {% if submitted %}<span class="tab-count">{{ submitted|length }}</span>{% endif %}
+    </a>
+</div>
+
+{% if tab == 'pending' %}
+{% if pending %}
+<div class="hw-grid">
+    {% for hw in pending %}
+    <div class="hw-card kid-hw-card">
+        <div class="hw-card-top {{ hw.class_level }}">
+            <div class="hw-type-icon big">{{ {'drawing':'🎨','writing':'✏️','reading':'📖','coloring':'🖍️','activity':'🎯','other':'📝'}.get(hw.homework_type,'📝') }}</div>
+            <div class="hw-due {% if hw.due_date and hw.due_date < now %}overdue{% endif %}">
+                📅 Due: {{ hw.due_date }}
+            </div>
+        </div>
+        <div class="hw-card-body">
+            <h3>{{ hw.title }}</h3>
+            {% if hw.description %}
+            <p class="hw-desc">{{ hw.description[:100] }}{% if hw.description|length > 100 %}...{% endif %}</p>
+            {% endif %}
+            <div class="hw-meta-row">
+                <span>👨‍🏫 {{ hw.teacher_name }}</span>
+                <span>⭐ {{ hw.max_marks }} marks</span>
+            </div>
+            {% if hw.file_path %}
+            <a href="{{ url_for('uploaded_file', filename=hw.file_path) }}" target="_blank" class="file-link">📎 See Reference</a>
+            {% endif %}
+        </div>
+        <div class="hw-card-footer">
+            <a href="{{ url_for('submit_homework', hw_id=hw.id) }}" class="btn-sm-full btn-do">🚀 Submit Now!</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-big">
+    <div class="empty-icon">🎉</div>
+    <h2>All Done!</h2>
+    <p>No pending homework! Great job! 🌟</p>
+    <a href="{{ url_for('student_games') }}" class="btn-primary">🎮 Go Play Games!</a>
+</div>
+{% endif %}
+
+{% else %}
+<!-- Submitted Tab -->
+{% if submitted %}
+<div class="submitted-list">
+    {% for hw in submitted %}
+    <div class="sub-result-card {{ 'graded' if hw.marks is not none else 'pending-grade' }}">
+        <div class="src-left">
+            <div class="src-icon">{{ {'drawing':'🎨','writing':'✏️','reading':'📖','coloring':'🖍️','activity':'🎯','other':'📝'}.get(hw.homework_type,'📝') }}</div>
+            <div class="src-info">
+                <div class="src-title">{{ hw.title }}</div>
+                <div class="src-meta">
+                    <span class="class-tag {{ hw.class_level }}">{{ hw.class_level.upper() }}</span>
+                    <span>By {{ hw.teacher_name }}</span>
+                    <span>Submitted: {{ hw.submitted_at.strftime('%d %b %Y') if hw.submitted_at else '-' }}</span>
+                </div>
+                {% if hw.sub_file %}
+                <a href="{{ url_for('uploaded_file', filename=hw.sub_file) }}" class="file-link" target="_blank">📎 My Submission</a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="src-right">
+            {% if hw.marks is not none %}
+            <div class="src-grade-box">
+                <div class="src-grade {{ 'grade-a' if hw.grade in ['A+','A'] else ('grade-b' if hw.grade in ['B+','B'] else 'grade-c') }}">{{ hw.grade }}</div>
+                <div class="src-marks">{{ hw.marks }}/{{ hw.max_marks }}</div>
+            </div>
+            {% if hw.feedback %}
+            <div class="src-feedback">💬 {{ hw.feedback }}</div>
+            {% endif %}
+            {% else %}
+            <div class="src-waiting">
+                <div class="waiting-icon">⏳</div>
+                <div>Waiting for grade...</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-big">
+    <div class="empty-icon">📭</div>
+    <h2>No submissions yet!</h2>
+    <p>Complete your homework and submit it here!</p>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

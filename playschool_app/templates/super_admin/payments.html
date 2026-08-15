@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Manage Payments - PlaySchool{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>💰 Financial Overview & Approvals</h1>
+    <p>Review incoming renewal requests and extend school licenses.</p>
+</div>
+
+<div class="card">
+    <div class="card-header">📋 Incoming Requests Logs</div>
+    {% if payments %}
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Requested At</th>
+                    <th>School</th>
+                    <th>Amount</th>
+                    <th>Receipt / Ref</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for p in payments %}
+            <tr>
+                <td>{{ p.payment_date }}</td>
+                <td><strong>{{ p.school_name }}</strong></td>
+                <td style="font-weight:bold; color: #27ae60;">₹{{ p.amount }}</td>
+                <td>
+                    {% if p.screenshot %}
+                    <a href="{{ url_for('static', filename='uploads/' + p.screenshot) }}" target="_blank" class="btn-sm" style="padding: 3px 8px; font-size: 11px; background: #3498db; color:white;">🖼️ View Receipt</a>
+                    {% else %}
+                    <span style="color:#999; font-size:11px;">No Proof</span>
+                    {% endif %}
+                    <br><small>{{ p.notes or '--' }}</small>
+                </td>
+                <td>
+                    <span class="type-badge" style="background:{% if p.status == 'approved' %}#27ae60{% else %}#e67e22{% endif %};">
+                        {{ p.status | upper }}
+                    </span>
+                </td>
+                <td>
+                    {% if p.status == 'pending' %}
+                    <a href="{{ url_for('super_admin_approve_payment', pid=p.id) }}" 
+                       class="btn-sm" 
+                       style="background: linear-gradient(to bottom, #27ae60, #2ecc71); color:white;"
+                       onclick="return confirm('Approve and extend this school by 12 months?');">
+                       ✅ Approve
+                    </a>
+                    {% else %}
+                    <span style="color:#95a5a6; font-size:12px;">Confirmed</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">📭 No transactions documented in logs yet.</div>
+    {% endif %}
+</div>
+{% endblock %}

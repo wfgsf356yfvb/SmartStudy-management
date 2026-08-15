@@ -1,0 +1,394 @@
+{% extends 'base.html' %}
+{% block title %}PlaySchool - The Future of Early Learning{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary: #6366f1;
+        --secondary: #ec4899;
+        --accent: #f59e0b;
+        --glass: rgba(255, 255, 255, 0.75);
+        --border: rgba(255, 255, 255, 0.3);
+    }
+
+    body {
+        font-family: 'Outfit', sans-serif;
+        background: #ffffff;
+    }
+
+    .main-content.full-width {
+        padding: 0 !important;
+        background: #ffffff;
+        overflow-x: hidden;
+    }
+
+    /* BLOB ANIMATIONS IN BACKGROUND */
+    .blob-bg {
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 900px;
+        overflow: hidden;
+        z-index: 0;
+        background: radial-gradient(circle at 15% 20%, rgba(99,102,241,0.12) 0%, transparent 40%),
+                    radial-gradient(circle at 85% 30%, rgba(236,72,153,0.1) 0%, transparent 35%);
+    }
+    .blob {
+        position: absolute;
+        filter: blur(80px);
+        border-radius: 50%;
+        opacity: 0.6;
+        z-index: 0;
+        animation: float 20s infinite linear;
+    }
+    .blob-1 { top: -100px; right: -50px; width: 400px; height: 400px; background: #818cf8; animation-duration: 25s; }
+    .blob-2 { top: 300px; left: -100px; width: 500px; height: 500px; background: #f472b6; animation-duration: 30s; animation-direction: reverse;}
+
+    @keyframes float {
+        0% { transform: translate(0, 0) rotate(0deg); }
+        33% { transform: translate(30px, 50px) rotate(120deg); }
+        66% { transform: translate(-20px, 20px) rotate(240deg); }
+        100% { transform: translate(0, 0) rotate(360deg); }
+    }
+
+    /* FIXED GLASS NAVIGATION */
+    .header-glass {
+        position: fixed;
+        top: 20px; left: 50%;
+        transform: translateX(-50%);
+        width: 90%; max-width: 1200px;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 100px;
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 15px 30px;
+        z-index: 1000;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    }
+    .brand {
+        display: flex; align-items: center; gap: 10px;
+        font-family: 'Baloo 2', cursive;
+        font-weight: 800; font-size: 26px;
+        color: #1e293b; text-decoration: none;
+    }
+    .brand span { color: var(--primary); }
+    
+    .nav-group { display: flex; gap: 20px; }
+    .btn-glow {
+        background: linear-gradient(135deg, #6366f1, #a855f7);
+        color: #fff;
+        border: none;
+        padding: 10px 25px;
+        border-radius: 50px;
+        font-weight: 700;
+        font-size: 14px;
+        box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+        transition: transform 0.3s ease;
+        text-decoration: none;
+    }
+    .btn-glow:hover { transform: scale(1.05); color: white; text-decoration: none; }
+    .btn-plain {
+        padding: 10px 20px;
+        color: #475569; font-weight: 600; font-size: 14px;
+        text-decoration: none;
+    }
+    .btn-plain:hover { color: var(--primary); text-decoration: none; }
+
+    /* HERO BLOCK */
+    .hero-wrap {
+        position: relative;
+        padding-top: 180px;
+        text-align: center;
+        z-index: 1;
+    }
+    .hero-badge {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: rgba(255,255,255,0.9);
+        border: 1px solid #e2e8f0;
+        padding: 8px 16px; border-radius: 100px;
+        font-weight: 700; font-size: 12px; color: #64748b;
+        text-transform: uppercase; letter-spacing: 1px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+    }
+    .hero-badge i { color: #f59e0b; }
+
+    .title-giant {
+        font-size: clamp(42px, 7vw, 76px);
+        line-height: 1.05;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: -2.5px;
+        max-width: 1000px;
+        margin: 0 auto 25px;
+    }
+    .magic-text {
+        background: linear-gradient(to right, #6366f1, #ec4899, #f59e0b);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-size: 200% auto;
+        animation: textShine 5s linear infinite;
+    }
+    @keyframes textShine { to { background-position: 200% center; } }
+
+    .desc-text {
+        font-size: 20px;
+        color: #64748b;
+        max-width: 600px;
+        margin: 0 auto 45px;
+        line-height: 1.6;
+    }
+
+    .cta-box {
+        display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;
+    }
+    .btn-master {
+        padding: 18px 40px;
+        border-radius: 16px;
+        font-size: 18px; font-weight: 700;
+        text-decoration: none;
+        display: inline-flex; align-items: center; gap: 10px;
+        transition: all 0.4s;
+    }
+    .btn-master-primary {
+        background: #0f172a; color: white;
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+    }
+    .btn-master-primary:hover { background: #1e293b; transform: translateY(-5px); color: white; text-decoration: none;}
+    .btn-master-outline {
+        background: white; color: #1e293b;
+        border: 1px solid #e2e8f0;
+    }
+    .btn-master-outline:hover { background: #f8fafc; border-color: #cbd5e1; text-decoration: none; color: #1e293b;}
+
+    /* VISUAL MOCKUP */
+    .mockup-frame {
+        margin-top: 80px;
+        padding: 0 5%;
+        perspective: 1500px;
+    }
+    .mockup-inner {
+        background: #fff;
+        border-radius: 30px;
+        padding: 15px;
+        border: 1px solid rgba(0,0,0,0.06);
+        box-shadow: 0 50px 100px -20px rgba(0,0,0,0.15);
+        transform: rotateX(10deg);
+        transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+    }
+    .mockup-inner:hover { transform: rotateX(0deg) scale(1.02); }
+    .mockup-inner img {
+        width: 100%; border-radius: 20px;
+        display: block; aspect-ratio: 16/9; object-fit: cover;
+    }
+
+    /* GRID OF CARDS */
+    .glass-sec {
+        padding: 120px 6%;
+        background: #fafafa;
+        position: relative;
+    }
+    .grid-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 30px;
+        margin-top: 60px;
+    }
+    .cool-card {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        border: 1px solid #f1f5f9;
+        transition: all 0.3s ease;
+    }
+    .cool-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 30px 60px rgba(0,0,0,0.05);
+        border-color: var(--primary);
+    }
+    .icon-box {
+        width: 60px; height: 60px;
+        border-radius: 16px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 26px; color: white;
+        margin-bottom: 25px;
+    }
+    .bg-p { background: linear-gradient(135deg, #6366f1, #818cf8); }
+    .bg-s { background: linear-gradient(135deg, #ec4899, #f472b6); }
+    .bg-a { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+
+    /* SECTION HEADER */
+    .sec-header { text-align: center; max-width: 700px; margin: 0 auto 50px; }
+    .sec-header h2 { font-size: 40px; font-weight: 800; color: #1e293b; margin-bottom: 15px; letter-spacing: -1px;}
+    .sec-header p { font-size: 18px; color: #64748b; }
+
+    /* PRICING UI */
+    .price-wrap {
+        display: flex; justify-content: center; gap: 30px; flex-wrap: wrap;
+        margin-top: 60px;
+    }
+    .price-tile {
+        background: #fff; padding: 50px 40px; border-radius: 24px; border: 1px solid #e2e8f0;
+        flex: 1; min-width: 300px; max-width: 400px; transition: transform 0.3s;
+    }
+    .price-tile.accent {
+        background: #0f172a; color: white;
+        border: none; transform: scale(1.05);
+        box-shadow: 0 30px 60px rgba(15, 23, 42, 0.2);
+    }
+    .price-tile.accent h3 { color: #fff; }
+    .price-tile.accent .price { color: #fff; }
+    
+    .price-tile h3 { font-size: 18px; color: #64748b; font-weight: 600; margin-bottom: 10px;}
+    .price { font-size: 48px; font-weight: 800; color: #1e293b; margin-bottom: 30px; }
+    .price span { font-size: 16px; font-weight: 400; color: #94a3b8; }
+
+    .perk-list { list-style: none; padding: 0; margin-bottom: 40px; }
+    .perk-list li { display: flex; gap: 12px; align-items: center; margin-bottom: 15px; font-size: 15px; }
+    .perk-list i { color: #10b981; font-size: 18px; }
+
+    .btn-buy {
+        display: block; text-align: center; padding: 15px; border-radius: 12px;
+        font-weight: 700; text-decoration: none; width: 100%;
+    }
+    .btn-buy-light { background: #f1f5f9; color: #1e293b; }
+    .btn-buy-solid { background: var(--primary); color: white; box-shadow: 0 10px 20px rgba(99,102,241,0.3); }
+    
+    /* FOOTER STYLING */
+    .site-foot {
+        background: #0f172a; padding: 80px 6% 40px; color: #94a3b8;
+    }
+    .foot-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 40px; margin-bottom: 60px; }
+    .foot-col h4 { color: #fff; font-family: 'Baloo 2', cursive; font-size: 24px; margin-bottom: 20px; }
+    .foot-col h5 { color: #fff; font-weight: 600; margin-bottom: 15px; }
+    .foot-links { list-style: none; padding: 0; }
+    .foot-links li { margin-bottom: 10px; }
+    .foot-links a { color: #94a3b8; text-decoration: none; transition: color 0.2s;}
+    .foot-links a:hover { color: #fff; }
+
+    @media (max-width: 768px) {
+        .nav-links:not(.always) { display: none; }
+        .title-giant { font-size: 38px; }
+        .price-tile.accent { transform: scale(1); }
+        .cta-box { flex-direction: column; align-items: center; }
+        .header-glass { border-radius: 20px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- FLUID BACKGROUND BLOB ARCHITECTURE -->
+<div class="blob-bg">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+</div>
+
+<!-- PREMIUM FLOATING NAVIGATION -->
+<nav class="header-glass">
+    <a href="{{ url_for('index') }}" class="brand">🎒 Play<span>School</span>.ai</a>
+    <div class="nav-group always" style="display:flex; align-items:center;">
+        <a href="{{ url_for('register') }}" class="btn-plain">Register</a>
+        <a href="{{ url_for('login') }}" class="btn-glow">Login</a>
+    </div>
+</nav>
+
+<!-- MAIN HERO EXPERIENCE -->
+<section class="hero-wrap">
+    <div class="hero-badge" data-aos="fade-down">
+        <i class="fas fa-star"></i> #1 Preschool Management Platform 2026
+    </div>
+    
+    <h1 class="title-giant" data-aos="fade-up" data-aos-delay="100">
+        One Platform, Total <br> <span class="magic-text">School Harmony.</span>
+    </h1>
+    
+    <p class="desc-text" data-aos="fade-up" data-aos-delay="200">
+        Seamlessly manage attendance, grading, parent communication, and dynamic curriculum distribution all from one beautiful dashboard.
+    </p>
+
+    <div class="cta-box" data-aos="fade-up" data-aos-delay="300">
+        <a href="{{ url_for('register') }}" class="btn-master btn-master-primary">
+            Start For Free <i class="fas fa-arrow-right"></i>
+        </a>
+        <a href="#pricing" class="btn-master btn-master-outline">
+            View Pricing
+        </a>
+    </div>
+
+    <!-- PERSPECTIVE MOCKUP -->
+    <div class="mockup-frame" data-aos="zoom-out-up" data-aos-delay="400">
+        <div class="mockup-inner">
+            <img src="https://images.unsplash.com/photo-1571260899304-425eee4c7efc?q=80&w=2070&auto=format&fit=crop" alt="Platform Demonstration">
+        </div>
+    </div>
+</section>
+
+<!-- PRICING GRID -->
+<section id="pricing" class="glass-sec" style="background:white;">
+    <div class="sec-header" data-aos="fade-up">
+        <h2>Transparent Value</h2>
+        <p>Pick the scaling licensing tier that scales exactly with your specific classroom population count.</p>
+    </div>
+
+    <div class="price-wrap">
+        <div class="price-tile" data-aos="fade-right">
+            <h3>Standard School</h3>
+            <div class="price">₹4,999 <span>/Year</span></div>
+            <ul class="perk-list">
+                <li><i class="fas fa-check-circle"></i> Up to 100 Students</li>
+                <li><i class="fas fa-check-circle"></i> Complete Grading Access</li>
+                <li><i class="fas fa-check-circle"></i> Attendance Management</li>
+                <li style="opacity:0.5;"><i class="fas fa-times-circle" style="color:#ccc;"></i> Dedicated Support Manager</li>
+            </ul>
+            <a href="{{ url_for('admin_billing') }}" class="btn-buy btn-buy-light">Choose Standard</a>
+        </div>
+
+        <div class="price-tile accent" data-aos="fade-up">
+            <div style="background:var(--primary); padding:5px 15px; border-radius:20px; display:inline-block; font-size:12px; font-weight:800; text-transform:uppercase; margin-bottom:15px;">Recommended</div>
+            <h3>Enterprise Campus</h3>
+            <div class="price">₹9,999 <span>/Year</span></div>
+            <ul class="perk-list">
+                <li><i class="fas fa-check-circle"></i> Unlimited Students</li>
+                <li><i class="fas fa-check-circle"></i> Complete Grading Access</li>
+                <li><i class="fas fa-check-circle"></i> Multi-Branch Management</li>
+                <li><i class="fas fa-check-circle"></i> 24/7 Phone Support</li>
+            </ul>
+            <a href="{{ url_for('admin_billing') }}" class="btn-buy btn-buy-solid">Go Premium Today</a>
+        </div>
+    </div>
+</section>
+
+<!-- MASTER FOOTER -->
+<footer class="site-foot">
+    <div class="foot-grid">
+        <div class="foot-col">
+            <h4>PlaySchool.ai</h4>
+            <p>Redefining global early childhood administrative software to let educators focus solely on teaching.</p>
+        </div>
+        <div class="foot-col">
+            <h5>Product</h5>
+            <ul class="foot-links">
+                <li><a href="{{ url_for('case_studies') }}">Case Studies</a></li>
+                <li><a href="{{ url_for('platform_docs') }}">Platform Docs</a></li>
+                <li><a href="{{ url_for('integration_apis') }}">Integration APIs</a></li>
+            </ul>
+        </div>
+        <div class="foot-col">
+            <h5>Company</h5>
+            <ul class="foot-links">
+                <li><a href="{{ url_for('about') }}">About Team</a></li>
+                <li><a href="{{ url_for('privacy') }}">Privacy Shield</a></li>
+                <li><a href="{{ url_for('terms') }}">Terms of Usage</a></li>
+            </ul>
+        </div>
+    </div>
+    <div style="border-top: 1px solid #1e293b; padding-top: 25px; display:flex; justify-content:space-between; font-size:14px; flex-wrap:wrap; gap:15px;">
+        <div>© 2026 PlaySchool Tech Ecosystem. All Rights Reserved.</div>
+        <div style="display:flex; gap:20px; font-size:18px;">
+            <a href="https://x.com" target="_blank" rel="noopener noreferrer" style="color:#94a3b8;"><i class="fab fa-twitter"></i></a>
+            <a href="https://www.linkedin.com" target="_blank" rel="noopener noreferrer" style="color:#94a3b8;"><i class="fab fa-linkedin"></i></a>
+            <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" style="color:#94a3b8;"><i class="fab fa-facebook"></i></a>
+        </div>
+    </div>
+</footer>
+{% endblock %}

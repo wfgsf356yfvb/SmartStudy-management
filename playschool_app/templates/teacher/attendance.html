@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}Mark Attendance{% endblock %}
+{% block content %}
+<div class="page-header" data-aos="fade-down">
+    <div>
+        <h1>Attendance Management</h1>
+        <p>Track and record daily attendance by class.</p>
+    </div>
+</div>
+
+<div class="card" style="padding: 15px;" data-aos="fade-up">
+    <form method="GET" class="filter-bar" style="display: flex; gap: 15px; align-items: flex-end;">
+        <div class="form-group" style="margin:0; flex: 1;">
+            <label>Select Class</label>
+            <select name="class" onchange="this.form.submit()">
+                <option value="nursery" {% if class_level == 'nursery' %}selected{% endif %}>Nursery</option>
+                <option value="lkg" {% if class_level == 'lkg' %}selected{% endif %}>LKG</option>
+                <option value="ukg" {% if class_level == 'ukg' %}selected{% endif %}>UKG</option>
+            </select>
+        </div>
+        <div class="form-group" style="margin:0; flex: 1;">
+            <label>Date</label>
+            <input type="date" name="date" value="{{ selected_date }}" onchange="this.form.submit()">
+        </div>
+    </form>
+</div>
+
+<form method="POST" action="{{ url_for('teacher_attendance') }}" data-aos="fade-up" data-aos-delay="100">
+    <input type="hidden" name="mark_date" value="{{ selected_date }}">
+    <input type="hidden" name="class_level" value="{{ class_level }}">
+    
+    <div class="card">
+        <div class="card-header">
+            <span>👥 Students in {{ class_level|upper }} ({{ selected_date }})</span>
+        </div>
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Student Name</th>
+                        <th>Status</th>
+                        <th>Remark / Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in students %}
+                    {% set r = rec_map.get(s.id) %}
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px; font-weight: 600;">
+                                <div style="width: 32px; height: 32px; border-radius: 50%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; color: #64748b;">{{ s.name[0] }}</div>
+                                {{ s.name }}
+                            </div>
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 8px;">
+                                <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; background: #f0fdf4; padding: 6px 12px; border-radius: 20px; border: 1px solid #bbf7d0;">
+                                    <input type="radio" name="status_{{ s.id }}" value="present" {% if not r or r.status == 'present' %}checked{% endif %}> 
+                                    <span style="color: #166534; font-weight: 600;">Present</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; background: #fef2f2; padding: 6px 12px; border-radius: 20px; border: 1px solid #fecaca;">
+                                    <input type="radio" name="status_{{ s.id }}" value="absent" {% if r and r.status == 'absent' %}checked{% endif %}> 
+                                    <span style="color: #991b1b; font-weight: 600;">Absent</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 4px; cursor: pointer; background: #fffbeb; padding: 6px 12px; border-radius: 20px; border: 1px solid #fef08a;">
+                                    <input type="radio" name="status_{{ s.id }}" value="late" {% if r and r.status == 'late' %}checked{% endif %}> 
+                                    <span style="color: #854d0e; font-weight: 600;">Late</span>
+                                </label>
+                            </div>
+                        </td>
+                        <td>
+                            <input type="text" name="remark_{{ s.id }}" placeholder="Optional remark" value="{{ r.remark if r else '' }}" style="padding: 6px 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3" style="text-align:center; color:#64748b; padding: 20px;">No students enrolled in this class yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if students %}
+    <div style="text-align: right; margin-top: 10px;">
+        <button type="submit" class="btn-primary" style="padding: 14px 30px; border-radius: 12px;">💾 Save All Records</button>
+    </div>
+    {% endif %}
+</form>
+{% endblock %}

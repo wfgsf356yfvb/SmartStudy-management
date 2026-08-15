@@ -1,0 +1,43 @@
+version: '3.8'
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpwd
+      MYSQL_DATABASE: playschool_db
+    ports:
+      - '3306:3306'
+    volumes:
+      - db_data:/var/lib/mysql
+  redis:
+    image: redis:7
+    ports:
+      - '6379:6379'
+  web:
+    build: .
+    depends_on:
+      - db
+      - redis
+    environment:
+      MYSQL_HOST: db
+      MYSQL_USER: root
+      MYSQL_PASSWORD: rootpwd
+      MYSQL_DB: playschool_db
+      CELERY_EAGER: '0'
+      CELERY_BROKER_URL: redis://redis:6379/0
+    ports:
+      - '5000:5000'
+  worker:
+    build: .
+    command: celery -A scripts.celery_app.celery_app worker --loglevel=info
+    environment:
+      MYSQL_HOST: db
+      MYSQL_USER: root
+      MYSQL_PASSWORD: rootpwd
+      MYSQL_DB: playschool_db
+      CELERY_BROKER_URL: redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+volumes:
+  db_data:

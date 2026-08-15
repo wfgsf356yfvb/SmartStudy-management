@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% block title %}Smart Study - Weekly Progress{% endblock %}
+
+{% block extra_css %}
+<style>
+.grade-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-weight: bold;
+    color: #fff;
+    display: inline-block;
+}
+.grade-A-plus { background-color: #27ae60; } /* green */
+.grade-A { background-color: #2980b9; } /* blue */
+.grade-B-plus { background-color: #00bcd4; } /* cyan */
+.grade-B { background-color: #f1c40f; color: #333; } /* yellow */
+.grade-C { background-color: #e67e22; } /* orange */
+.grade-D { background-color: #e74c3c; } /* red */
+
+.avg-card {
+    background: linear-gradient(135deg, #a8e063 0%, #56ab2f 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.avg-value {
+    font-size: 32px;
+    font-weight: 800;
+}
+.game-stars {
+    color: #f1c40f;
+    font-size: 20px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📖 <span data-i18n="Smart Study - Weekly Progress">Smart Study - Weekly Progress</span></h1>
+</div>
+
+{% if overall_avg is not none %}
+<div class="avg-card">
+    <div>
+        <h3 style="margin: 0; font-size: 18px; opacity: 0.9;">Overall Average</h3>
+        <div class="avg-value">{{ "%.1f"|format(overall_avg) }}%</div>
+    </div>
+    <div style="font-size: 48px;">📈</div>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-header">📊 Weekly Reports</div>
+    {% if weekly %}
+    <div class="table-responsive">
+        <table class="data-table" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th>Week</th>
+                    <th>Subject</th>
+                    <th>Marks</th>
+                    <th>Total</th>
+                    <th>Grade</th>
+                    <th>Teacher Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for w in weekly %}
+                <tr>
+                    <td>Week {{ w.week_number }} ({{ w.year }})</td>
+                    <td><strong>{{ w.subject }}</strong></td>
+                    <td>{{ w.marks_obtained }}</td>
+                    <td>{{ w.total_marks }}</td>
+                    <td>
+                        {% if w.grade == 'A+' %}
+                            <span class="grade-badge grade-A-plus">{{ w.grade }}</span>
+                        {% elif w.grade == 'A' %}
+                            <span class="grade-badge grade-A">{{ w.grade }}</span>
+                        {% elif w.grade == 'B+' %}
+                            <span class="grade-badge grade-B-plus">{{ w.grade }}</span>
+                        {% elif w.grade == 'B' %}
+                            <span class="grade-badge grade-B">{{ w.grade }}</span>
+                        {% elif w.grade == 'C' %}
+                            <span class="grade-badge grade-C">{{ w.grade }}</span>
+                        {% else %}
+                            <span class="grade-badge grade-D">{{ w.grade }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ w.teacher_remarks or '-' }}
+                        <br><small style="color: #7f8c8d;">- {{ w.teacher_name }}</small>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">No weekly progress records found yet.</div>
+    {% endif %}
+</div>
+
+<div class="card" style="margin-top: 20px;">
+    <div class="card-header">🎮 Game Progress</div>
+    {% if game_stats %}
+    <div class="game-grid stats-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));">
+        {% for game in game_stats %}
+        <div class="stat-card" style="text-align: center;">
+            <div style="font-size: 32px; margin-bottom: 10px;">
+                {% if 'Math' in game.game_name %}🔢{% elif 'Word' in game.game_name %}📝{% else %}🎮{% endif %}
+            </div>
+            <div style="font-weight: bold; margin-bottom: 5px;">{{ game.game_name }}</div>
+            <div class="stat-sub">Best Score: {{ game.best }}</div>
+            <div class="game-stars">
+                {% for _ in range(game.stars|int) %}⭐{% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">No games played yet. Play some games to earn stars! ⭐</div>
+    {% endif %}
+</div>
+
+{% endblock %}

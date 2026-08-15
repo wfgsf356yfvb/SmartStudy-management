@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+{% block title %}Fun Games - PlaySchool{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>🎮 Fun Games!</h1>
+    <p>Play and Learn! Earn Stars! 🌟</p>
+</div>
+
+<!-- Star Counter -->
+<div class="star-banner">
+    <div class="star-total">🌟 Total Stars Earned: <strong>{{ total_stars }}</strong></div>
+    <div class="my-scores">
+        {% for sc in scores %}
+        <span class="score-chip">{{ sc.game_name }}: ⭐×{{ sc.stars }}</span>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Games Grid -->
+<div class="games-grid">
+
+    <!-- Game 1: Color Match -->
+    <div class="game-card" onclick="openGame('colorMatch')">
+        <div class="game-thumb" style="background: linear-gradient(135deg,#FF6B6B,#FFA07A)">🎨</div>
+        <div class="game-info">
+            <div class="game-title">Color Match!</div>
+            <div class="game-desc">Match the colours and win stars!</div>
+            <div class="game-stars">
+                {% set cm = scores|selectattr('game_name','equalto','Color Match')|first %}
+                {% if cm %}⭐ Best: {{ cm.stars }} stars{% else %}Not played yet{% endif %}
+            </div>
+        </div>
+        <div class="game-play-btn">▶ Play!</div>
+    </div>
+
+    <!-- Game 2: Count Animals -->
+    <div class="game-card" onclick="openGame('countAnimals')">
+        <div class="game-thumb" style="background: linear-gradient(135deg,#43E97B,#38F9D7)">🐾</div>
+        <div class="game-info">
+            <div class="game-title">Count Animals!</div>
+            <div class="game-desc">Count the animals and tap the right number!</div>
+            <div class="game-stars">
+                {% set ca = scores|selectattr('game_name','equalto','Count Animals')|first %}
+                {% if ca %}⭐ Best: {{ ca.stars }} stars{% else %}Not played yet{% endif %}
+            </div>
+        </div>
+        <div class="game-play-btn">▶ Play!</div>
+    </div>
+
+    <!-- Game 3: ABC Fun -->
+    <div class="game-card" onclick="openGame('abcFun')">
+        <div class="game-thumb" style="background: linear-gradient(135deg,#4481EB,#04BEFE)">🔤</div>
+        <div class="game-info">
+            <div class="game-title">ABC Fun!</div>
+            <div class="game-desc">Tap the correct letter! Learn A to Z!</div>
+            <div class="game-stars">
+                {% set abc = scores|selectattr('game_name','equalto','ABC Fun')|first %}
+                {% if abc %}⭐ Best: {{ abc.stars }} stars{% else %}Not played yet{% endif %}
+            </div>
+        </div>
+        <div class="game-play-btn">▶ Play!</div>
+    </div>
+
+    <!-- Game 4: Shape Sorter -->
+    <div class="game-card" onclick="openGame('shapeSorter')">
+        <div class="game-thumb" style="background: linear-gradient(135deg,#F093FB,#F5576C)">🔷</div>
+        <div class="game-info">
+            <div class="game-title">Shape Sorter!</div>
+            <div class="game-desc">Find the matching shape! Circle, Square, Triangle!</div>
+            <div class="game-stars">
+                {% set ss = scores|selectattr('game_name','equalto','Shape Sorter')|first %}
+                {% if ss %}⭐ Best: {{ ss.stars }} stars{% else %}Not played yet{% endif %}
+            </div>
+        </div>
+        <div class="game-play-btn">▶ Play!</div>
+    </div>
+
+    <!-- Game 5: Fruit Math -->
+    <div class="game-card" onclick="openGame('fruitMath')">
+        <div class="game-thumb" style="background: linear-gradient(135deg,#FF416C,#FF4B2B)">🍎</div>
+        <div class="game-info">
+            <div class="game-title">Fruit Math!</div>
+            <div class="game-desc">Solve yummy math problems!</div>
+            <div class="game-stars">
+                {% set fm = scores|selectattr('game_name','equalto','Fruit Math')|first %}
+                {% if fm %}⭐ Best: {{ fm.stars }} stars{% else %}Not played yet{% endif %}
+            </div>
+        </div>
+        <div class="game-play-btn">▶ Play!</div>
+    </div>
+
+    <!-- Game 6: Pattern Logic -->
+    <div class="game-card" onclick="openGame('patternLogic')">
+        <div class="game-thumb" style="background: linear-gradient(135deg,#2193b0,#6dd5ed)">🔁</div>
+        <div class="game-info">
+            <div class="game-title">Pattern Logic!</div>
+            <div class="game-desc">Finish the color pattern logic!</div>
+            <div class="game-stars">
+                {% set pl = scores|selectattr('game_name','equalto','Pattern Logic')|first %}
+                {% if pl %}⭐ Best: {{ pl.stars }} stars{% else %}Not played yet{% endif %}
+            </div>
+        </div>
+        <div class="game-play-btn">▶ Play!</div>
+    </div>
+
+    <!-- Game 7: Big vs Small -->
+    <div class="game-card" onclick="openGame('bigSmall')">
+        <div class="game-thumb" style="background: linear-gradient(135deg,#00b09b,#96c93d)">🐘</div>
+        <div class="game-info">
+            <div class="game-title">Big vs Small</div>
+            <div class="game-desc">Choose the biggest item!</div>
+            <div class="game-stars">
+                {% set bs = scores|selectattr('game_name','equalto','Big vs Small')|first %}
+                {% if bs %}⭐ Best: {{ bs.stars }} stars{% else %}Not played yet{% endif %}
+            </div>
+        </div>
+        <div class="game-play-btn">▶ Play!</div>
+    </div>
+
+    <!-- Game 8: Odd One Out -->
+    <div class="game-card" onclick="openGame('oddOneOut')">
+        <div class="game-thumb" style="background: linear-gradient(135deg,#cc2b5e,#753a88)">❓</div>
+        <div class="game-info">
+            <div class="game-title">Odd One Out!</div>
+            <div class="game-desc">Find what doesn't belong here!</div>
+            <div class="game-stars">
+                {% set oo = scores|selectattr('game_name','equalto','Odd One Out')|first %}
+                {% if oo %}⭐ Best: {{ oo.stars }} stars{% else %}Not played yet{% endif %}
+            </div>
+        </div>
+        <div class="game-play-btn">▶ Play!</div>
+    </div>
+
+    <!-- Game 9: Vehicle Match -->
+    <div class="game-card" onclick="openGame('vehicleMatch')">
+        <div class="game-thumb" style="background: linear-gradient(135deg,#e65c00,#F9D423)">🚗</div>
+        <div class="game-info">
+            <div class="game-title">Vehicle Match!</div>
+            <div class="game-desc">Can you find the right car?</div>
+            <div class="game-stars">
+                {% set vm = scores|selectattr('game_name','equalto','Vehicle Match')|first %}
+                {% if vm %}⭐ Best: {{ vm.stars }} stars{% else %}Not played yet{% endif %}
+            </div>
+        </div>
+        <div class="game-play-btn">▶ Play!</div>
+    </div>
+
+    <!-- Game 10: Planet Trivia -->
+    <div class="game-card" onclick="openGame('planetTrivia')">
+        <div class="game-thumb" style="background: linear-gradient(135deg,#4e54c8,#8f94fb)">🌌</div>
+        <div class="game-info">
+            <div class="game-title">Planet Blast!</div>
+            <div class="game-desc">Spot the cool space objects!</div>
+            <div class="game-stars">
+                {% set pt = scores|selectattr('game_name','equalto','Planet Blast')|first %}
+                {% if pt %}⭐ Best: {{ pt.stars }} stars{% else %}Not played yet{% endif %}
+            </div>
+        </div>
+        <div class="game-play-btn">▶ Play!</div>
+    </div>
+
+</div>
+
+<!-- Game Modal -->
+<div class="game-modal" id="gameModal">
+    <div class="game-modal-content">
+        <div class="game-modal-header">
+            <div class="gm-title" id="modalTitle">🎮 Game</div>
+            <button class="gm-close" onclick="closeGame()">✕</button>
+        </div>
+        <div class="game-area" id="gameArea">
+            <!-- Game injected here by JS -->
+        </div>
+        <div class="game-result" id="gameResult" style="display:none">
+            <div class="result-emoji" id="resultEmoji">🎉</div>
+            <div class="result-title" id="resultTitle">Great Job!</div>
+            <div class="result-stars" id="resultStars"></div>
+            <div class="result-score" id="resultScore"></div>
+            <button class="btn-primary" onclick="playAgain()">🔄 Play Again!</button>
+            <button class="btn-outline" onclick="closeGame()">🏠 Go Home</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.STUDENT_CLASS = "{{ class_level or 'nursery' }}";
+</script>
+<script src="{{ url_for('static', filename='js/games.js') }}"></script>
+{% endblock %}
