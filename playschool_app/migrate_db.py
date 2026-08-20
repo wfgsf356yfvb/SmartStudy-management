@@ -29,15 +29,6 @@ try:
     cur.execute("UPDATE users SET school_id=1 WHERE school_id IS NULL AND role != 'super_admin'")
     print("Seeded Default School and migrated users.")
     
-    # Ensure Super Admin exists with correct hash
-    from werkzeug.security import generate_password_hash
-    hashed_pw = generate_password_hash("superadmin123")
-    cur.execute("SELECT id FROM users WHERE email='superadmin@playschool.com'")
-    if not cur.fetchone():
-        cur.execute("INSERT INTO users (name, email, phone, password_hash, role, school_id) VALUES (?,?,?,?,?,NULL)", 
-                    ('Super Admin', 'superadmin@playschool.com', '0000000000', hashed_pw, 'super_admin'))
-        print("Super Admin seeded with superadmin123")
-    
 except Exception as e:
     print(f"Seeding/SuperAdmin failed: {e}")
 

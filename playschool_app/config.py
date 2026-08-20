@@ -16,7 +16,7 @@ class Config:
     SECRET_KEY = SECRET_KEY or 'development-only-change-me'
 
     MYSQL_HOST = os.environ.get('MYSQL_HOST', 'localhost')
-    MYSQL_USER = os.environ.get('MYSQL_USER', 'root')
+    MYSQL_USER = os.environ.get('MYSQL_USER', '')
     MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', '')
     MYSQL_DB = os.environ.get('MYSQL_DB', 'playschool_db')
     MYSQL_PORT = int(os.environ.get('MYSQL_PORT', 3306))
@@ -36,3 +36,9 @@ class Config:
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', '')
     UPI_ID = os.environ.get('UPI_ID', '')
     UPI_NAME = os.environ.get('UPI_NAME', 'PlaySchool Renewal')
+
+    if IS_PRODUCTION:
+        if not MYSQL_USER or MYSQL_USER.lower() == 'root':
+            raise RuntimeError('MYSQL_USER must be a non-root application account in production.')
+        if not MYSQL_PASSWORD:
+            raise RuntimeError('MYSQL_PASSWORD must be provided in production.')

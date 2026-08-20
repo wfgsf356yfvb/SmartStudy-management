@@ -118,21 +118,3 @@ CREATE TABLE IF NOT EXISTS announcements (
     FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- =============================================
--- Seed Data - Default Admin Account
--- =============================================
--- Default admin: admin@playschool.com / admin123
--- Seed Default Data
-INSERT IGNORE INTO schools (id, name, address) VALUES (1, 'Default School', 'Main Campus');
-
--- Default super_admin
-INSERT IGNORE INTO users (name, email, phone, password_hash, role, school_id) VALUES
-('Super Admin', 'superadmin@playschool.com', '0000000000',
- 'scrypt:32768:8:1$salt$hash_placeholder',
- 'super_admin', NULL);
-
--- Default school admin
-INSERT IGNORE INTO users (name, email, phone, password_hash, role, school_id) VALUES
-('School Admin', 'admin@playschool.com', '9999999999',
- 'scrypt:32768:8:1$salt$hash_placeholder',
- 'admin', 1);

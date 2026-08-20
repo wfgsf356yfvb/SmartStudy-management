@@ -1,8 +1,8 @@
 """
 PlaySchool ERP - MySQL Database Setup
 
-Run this script ONCE to create the database, tables,
-and seed default accounts.
+Run this script ONCE to create the database and tables.
+It does not create default or demo accounts.
 
 Usage:
     python mysql_setup.py
@@ -22,7 +22,7 @@ load_dotenv()
 # ============================================================
 
 MYSQL_HOST = "localhost"
-MYSQL_USER = "root"
+MYSQL_USER = os.environ.get("MYSQL_USER", "")
 MYSQL_PASSWORD = os.environ.get("MYSQL_PASSWORD", "")
 MYSQL_DB = "playschool_db"
 MYSQL_PORT = 3306
@@ -468,8 +468,7 @@ def create_tables():
 # ============================================================
 
 def seed_data():
-    """Seed default school and admin accounts."""
-    # Delegate to generic creator for the configured DB
+    """Create the configured schema without seeding accounts."""
     return create_tables_for_db(MYSQL_DB)
 
 
@@ -503,166 +502,14 @@ def create_tables_for_db(db_name):
         """)
 
         print("  ✅ schools table")
-        # Seed default school if absent
-        cursor.execute("SELECT id FROM schools WHERE id=1")
-        if not cursor.fetchone():
-            cursor.execute(
-                """
-                INSERT INTO schools (id, name, address, subdomain, subscription_status, valid_until)
-                VALUES (%s, %s, %s, %s, 'active', DATE_ADD(NOW(), INTERVAL 1 YEAR))
-                """,
-                (1, "Default School", "Main Campus", "default")
-            )
-            print("  ✅ Default School seeded")
-
-        # ----------------------------------------------------
-        # Super Admin
-        # ----------------------------------------------------
-
-        cursor.execute(
-            """
-            SELECT id
-            FROM users
-            WHERE email='superadmin@playschool.com'
-            """
-        )
-
-        if not cursor.fetchone():
-
-            pw_hash = generate_password_hash(
-                "superadmin123"
-            )
-
-            cursor.execute(
-                """
-                INSERT INTO users
-                (
-                    name,
-                    email,
-                    phone,
-                    password_hash,
-                    role,
-                    school_id
-                )
-                VALUES
-                (%s, %s, %s, %s, %s, NULL)
-                """,
-                (
-                    "Super Admin",
-                    "superadmin@playschool.com",
-                    "0000000000",
-                    pw_hash,
-                    "super_admin"
-                )
-            )
-
-            print(
-                "  ✅ Super Admin seeded "
-                "(superadmin@playschool.com / superadmin123)"
-            )
-
-        # ----------------------------------------------------
-        # School Admin
-        # ----------------------------------------------------
-
-        cursor.execute(
-            """
-            SELECT id
-            FROM users
-            WHERE email='admin@playschool.com'
-            """
-        )
-
-        if not cursor.fetchone():
-
-            pw_hash = generate_password_hash(
-                "admin123"
-            )
-
-            cursor.execute(
-                """
-                INSERT INTO users
-                (
-                    name,
-                    email,
-                    phone,
-                    password_hash,
-                    role,
-                    school_id
-                )
-                VALUES
-                (%s, %s, %s, %s, %s, %s)
-                """,
-                (
-                    "School Admin",
-                    "admin@playschool.com",
-                    "9999999999",
-                    pw_hash,
-                    "admin",
-                    1
-                )
-            )
-
-            print(
-                "  ✅ School Admin seeded "
-                "(admin@playschool.com / admin123)"
-            )
-
-        # ----------------------------------------------------
-        # Default Teacher / Class Demo Accounts
-        # ----------------------------------------------------
-        demo_accounts = [
-            ("Teacher Demo", "teacher@playschool.com", "teacher123", "teacher", 1, None),
-            ("Nursery Class", "nursery@playschool.com", "nursery123", "student", 1, "nursery"),
-            ("LKG Class", "lkg@playschool.com", "lkg123", "student", 1, "lkg"),
-            ("UKG Class", "ukg@playschool.com", "ukg123", "student", 1, "ukg"),
-        ]
-
-        for name, email, password_value, role, school_id, class_level in demo_accounts:
-            cursor.execute(
-                "SELECT id FROM users WHERE email=%s",
-                (email,)
-            )
-            if not cursor.fetchone():
-                pw_hash = generate_password_hash(password_value)
-                cursor.execute(
-                    """
-                    INSERT INTO users
-                    (
-                        name,
-                        email,
-                        phone,
-                        password_hash,
-                        role,
-                        school_id,
-                        class_level,
-                        is_active
-                    )
-                    VALUES
-                    (%s, %s, %s, %s, %s, %s, %s, 1)
-                    """,
-                    (
-                        name,
-                        email,
-                        "1111111111",
-                        pw_hash,
-                        role,
-                        school_id,
-                        class_level,
-                    )
-                )
-                print(f"  ✅ Demo account seeded ({email} / {password_value})")
-
-        # ----------------------------------------------------
-        # Commit & Close
-        # ----------------------------------------------------
-
+        # Account and tenant provisioning are controlled workflows. This
+        # schema helper must never create default or demo credentials.
         conn.commit()
 
         cursor.close()
         conn.close()
 
-        print("\n✅ Seed data inserted!")
+        print("\n✅ Schema created; no default accounts were seeded.")
 
     except Error as e:
         print(f"❌ Error seeding data: {e}")
@@ -694,22 +541,12 @@ if __name__ == "__main__":
     print("\n--- Creating Tables ---")
     create_tables()
 
-    # Seed Default Data
-    print("\n--- Seeding Default Data ---")
+    # Verify schema only; account provisioning is a controlled workflow.
+    print("\n--- Creating Schema Without Default Accounts ---")
     seed_data()
 
     print("\n" + "=" * 50)
     print("🎉 Setup Complete! You can now run: python app.py")
     print("=" * 50)
-
-    print("\nDefault Logins:")
-    print(
-        "  👑 Super Admin: "
-        "superadmin@playschool.com / superadmin123"
-    )
-    print(
-        "  🏫 School Admin: "
-        "admin@playschool.com / admin123"
-    )
 
     print("=" * 50)

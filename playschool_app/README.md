@@ -5,7 +5,7 @@
 Create a `.env` file in the project root with your MySQL and SMTP credentials:
 
 MYSQL_HOST=localhost
-MYSQL_USER=root
+MYSQL_USER=<non-root-application-user>
 MYSQL_PASSWORD=your_mysql_password
 MYSQL_DB=playschool_db
 MYSQL_PORT=3306
@@ -16,7 +16,7 @@ MAIL_PASSWORD=
 Then run:
 
 ```powershell
-python mysql_setup.py   # creates DB, tables, and seeds default users
+python mysql_setup.py   # creates DB and tables; does not seed accounts
 python app.py           # start the Flask app
 ```
 
@@ -62,7 +62,7 @@ Quick start (development)
 
 Provisioning tenants
 
-- Super Admin UI: log in as `superadmin@playschool.com` (seeded) and go to `/super-admin/provision`.
+- Super Admin provisioning requires a controlled operator workflow; no default account is seeded.
 - CLI: `python scripts/provision_tenant.py --name "My School" --subdomain mysn`
 - To store tenant DB credentials in AWS Secrets Manager, set `USE_AWS_SECRETS=1` or use `--use-aws` flag.
 

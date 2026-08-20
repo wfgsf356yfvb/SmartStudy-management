@@ -129,18 +129,3 @@ CREATE TABLE IF NOT EXISTS attendance (
     UNIQUE(student_id, date)
 );
 
-
--- Seed Default Data
-INSERT OR IGNORE INTO schools (id, name, address) VALUES (1, 'Default School', 'Main Campus');
-
--- Default super_admin: superadmin@playschool.com / superadmin123 (Assigned no specific school_id so views all)
-INSERT OR IGNORE INTO users (name, email, phone, password_hash, role, school_id) VALUES
-('Super Admin', 'superadmin@playschool.com', '0000000000',
- 'scrypt:32768:8:1$salt$hash_placeholder',
- 'super_admin', NULL);
-
--- Default school admin: admin@playschool.com / admin123 (Assigned to default school)
-INSERT OR IGNORE INTO users (name, email, phone, password_hash, role, school_id) VALUES
-('School Admin', 'admin@playschool.com', '9999999999',
- 'scrypt:32768:8:1$salt$hash_placeholder',
- 'admin', 1);

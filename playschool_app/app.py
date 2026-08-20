@@ -55,23 +55,27 @@ except Error as e:
     err_str = str(e).lower()
     # If the database is missing, try to create it and the tables, then retry
     if 'unknown database' in err_str or 'doesn\'t exist' in err_str or ('database' in err_str and 'unknown' in err_str):
-        print("   Database not found Ã¢â‚¬â€ attempting to create database and tables...")
-        try:
-            create_database()
-            create_tables()
-            seed_data()
-            # Retry pool creation
-            connection_pool = pooling.MySQLConnectionPool(
-                pool_name="playschool_pool",
-                pool_size=5,
-                pool_reset_session=True,
-                **db_config
-            )
-            print("Ã¢Å“â€¦ MySQL Connection Pool created successfully after initializing DB!")
-        except Exception as e2:
-            print(f"Ã¢ÂÅ’ Failed to initialize DB and create pool: {e2}")
-            print("   You can also run: python mysql_setup.py")
+        if Config.IS_PRODUCTION:
+            print("   Database is missing; automatic production initialization is disabled.")
             connection_pool = None
+        else:
+            print("   Database not found Ã¢â‚¬â€ attempting to create database and tables...")
+            try:
+                create_database()
+                create_tables()
+                seed_data()
+                # Retry pool creation
+                connection_pool = pooling.MySQLConnectionPool(
+                    pool_name="playschool_pool",
+                    pool_size=5,
+                    pool_reset_session=True,
+                    **db_config
+                )
+                print("Ã¢Å“â€¦ MySQL Connection Pool created successfully after initializing DB!")
+            except Exception as e2:
+                print(f"Ã¢ÂÅ’ Failed to initialize DB and create pool: {e2}")
+                print("   You can also run: python mysql_setup.py")
+                connection_pool = None
     else:
         print("   Make sure MySQL is running and run: python mysql_setup.py")
         connection_pool = None
@@ -1277,9 +1281,10 @@ def student_pay_fee():
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-@app.route('/test')
-def test():
-    return "<h2 style='font-family:sans-serif;color:green'>Ã¢Å“â€¦ Flask is working! MySQL Connected!</h2>"
+if not Config.IS_PRODUCTION:
+    @app.route('/test')
+    def test():
+        return "<h2 style='font-family:sans-serif;color:green'>Ã¢Å“â€¦ Flask is working! MySQL Connected!</h2>"
 
 
 # Static informational pages
@@ -1315,40 +1320,7 @@ def integration_apis():
 # Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 # DB Init route (MySQL version)
 # Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
-@app.route('/init-db')
-def init_db():
-    try:
-        # Just verify connection and seed defaults
-        schools = query_db("SELECT COUNT(*) as c FROM schools", one=True, use_control=True)
-        users_count = query_db("SELECT COUNT(*) as c FROM users", one=True)
-        
-        if schools['c'] == 0:
-            query_db("INSERT INTO schools (name, address, subscription_status, valid_until) VALUES (%s,%s,'active', DATE_ADD(NOW(), INTERVAL 1 YEAR))",
-                     ('Default School', 'Main Campus'), commit=True, use_control=True)
-        
-        if users_count['c'] == 0:
-            pw_admin = generate_password_hash('admin123')
-            pw_super = generate_password_hash('superadmin123')
-            pw_teacher = generate_password_hash('teacher123')
-            pw_nursery = generate_password_hash('nursery123')
-            pw_lkg = generate_password_hash('lkg123')
-            pw_ukg = generate_password_hash('ukg123')
-            query_db("INSERT INTO users (name,email,phone,password_hash,role,school_id) VALUES (%s,%s,%s,%s,%s,NULL)",
-                     ('Super Admin', 'superadmin@playschool.com', '0000000000', pw_super, 'super_admin'), commit=True)
-            query_db("INSERT INTO users (name,email,phone,password_hash,role,school_id) VALUES (%s,%s,%s,%s,%s,%s)",
-                     ('School Admin', 'admin@playschool.com', '9999999999', pw_admin, 'admin', 1), commit=True)
-            query_db("INSERT INTO users (name,email,phone,password_hash,role,school_id,class_level) VALUES (%s,%s,%s,%s,%s,%s,%s)",
-                     ('Teacher Demo', 'teacher@playschool.com', '1111111111', pw_teacher, 'teacher', 1, None), commit=True)
-            query_db("INSERT INTO users (name,email,phone,password_hash,role,school_id,class_level) VALUES (%s,%s,%s,%s,%s,%s,%s)",
-                     ('Nursery Class', 'nursery@playschool.com', '1111111112', pw_nursery, 'student', 1, 'nursery'), commit=True)
-            query_db("INSERT INTO users (name,email,phone,password_hash,role,school_id,class_level) VALUES (%s,%s,%s,%s,%s,%s,%s)",
-                     ('LKG Class', 'lkg@playschool.com', '1111111113', pw_lkg, 'student', 1, 'lkg'), commit=True)
-            query_db("INSERT INTO users (name,email,phone,password_hash,role,school_id,class_level) VALUES (%s,%s,%s,%s,%s,%s,%s)",
-                     ('UKG Class', 'ukg@playschool.com', '1111111114', pw_ukg, 'student', 1, 'ukg'), commit=True)
-
-        return '<h2 style="font-family:sans-serif;color:green">Ã¢Å“â€¦ MySQL Database verified! <a href="/login">Login now</a></h2>'
-    except Exception as e:
-        return f'<h2 style="color:red">Ã¢ÂÅ’ Error: {e}<br><br>Run: python mysql_setup.py first!</h2>'
+## Database initialization is intentionally not exposed through Flask.
 
 
 # Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
