@@ -1,0 +1,142 @@
+services:
+  control-db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required only for MySQL bootstrap/maintenance}"
+      MYSQL_DATABASE: "${MYSQL_DB:?MYSQL_DB is required}"
+      MYSQL_USER: "${MYSQL_USER:?MYSQL_USER is required}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}"
+    volumes:
+      - control_db_data:/var/lib/mysql
+    expose:
+      - "3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u$${MYSQL_USER} -p$${MYSQL_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    environment:
+      REDISCLI_AUTH: "${REDIS_PASSWORD:?REDIS_PASSWORD is required}"
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD is required}"]
+    volumes:
+      - redis_data:/data
+    expose:
+      - "6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  malware-scanner:
+    image: clamav/clamav:stable-debian13-slim
+    restart: unless-stopped
+    volumes:
+      - clamav_signatures:/var/lib/clamav
+    expose:
+      - "3310"
+    healthcheck:
+      test: ["CMD-SHELL", "clamdscan --ping 5 --no-summary >/dev/null 2>&1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 2m
+
+  web:
+    build: .
+    restart: unless-stopped
+    command: ["gunicorn", "app:app", "--bind", "0.0.0.0:5000", "--workers", "3", "--access-logfile", "-", "--error-logfile", "-"]
+    environment:
+      FLASK_ENV: production
+      SECRET_KEY: "${SECRET_KEY:?SECRET_KEY is required}"
+      MYSQL_HOST: control-db
+      MYSQL_PORT: "3306"
+      MYSQL_DB: "${MYSQL_DB:?MYSQL_DB is required}"
+      MYSQL_USER: "${MYSQL_USER:?MYSQL_USER is required}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}"
+      TENANT_BASE_DOMAIN: "${TENANT_BASE_DOMAIN:?TENANT_BASE_DOMAIN is required}"
+      TRUSTED_PROXY_COUNT: "${TRUSTED_PROXY_COUNT:-1}"
+      TENANT_CREDENTIAL_PROVIDER: protected_file
+      TENANT_DB_CREDENTIALS_FILE: /var/lib/smartstudy/tenant-credentials/tenant_credentials.json
+      FILE_STORAGE_PROVIDER: "${FILE_STORAGE_PROVIDER:-local}"
+      OBJECT_STORAGE_BUCKET: "${OBJECT_STORAGE_BUCKET:-}"
+      FILE_SCANNER_PROVIDER: "${FILE_SCANNER_PROVIDER:-command}"
+      FILE_SCANNER_COMMAND: "${FILE_SCANNER_COMMAND:-clamdscan --stream --config-file=/etc/clamav/clamdscan.conf --no-summary}"
+      ALLOW_UNSCANNED_UPLOADS: "0"
+      TENANT_UPLOAD_QUOTA_BYTES: "${TENANT_UPLOAD_QUOTA_BYTES:?TENANT_UPLOAD_QUOTA_BYTES is required}"
+      UPLOAD_RETENTION_DAYS: "${UPLOAD_RETENTION_DAYS:?UPLOAD_RETENTION_DAYS is required}"
+      CELERY_BROKER_URL: "redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/0"
+      CELERY_RESULT_BACKEND: "redis://:${REDIS_PASSWORD}@redis:6379/1"
+      CELERY_EAGER: "0"
+      PROVISION_JOBS_FILE: /var/lib/smartstudy/provision/jobs.json
+      PROVISION_AUDIT_FILE: /var/lib/smartstudy/provision/audit.log
+    volumes:
+      - tenant_credentials:/var/lib/smartstudy/tenant-credentials
+      - provision_data:/var/lib/smartstudy/provision
+      - uploads_data:/app/instance/private_uploads
+    depends_on:
+      control-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      malware-scanner:
+        condition: service_healthy
+    ports:
+      - "${WEB_BIND_ADDRESS:-127.0.0.1}:${WEB_PORT:-5000}:5000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import socket; s=socket.create_connection(('127.0.0.1',5000),2); s.close()\""]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  worker:
+    build: .
+    restart: unless-stopped
+    command: ["celery", "-A", "scripts.celery_app.celery_app", "worker", "--loglevel=INFO", "--concurrency=2", "--hostname=provision@%h"]
+    environment:
+      FLASK_ENV: production
+      SECRET_KEY: "${SECRET_KEY:?SECRET_KEY is required}"
+      MYSQL_HOST: control-db
+      MYSQL_PORT: "3306"
+      MYSQL_DB: "${MYSQL_DB:?MYSQL_DB is required}"
+      MYSQL_USER: "${MYSQL_USER:?MYSQL_USER is required}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}"
+      PROVISIONING_MYSQL_USER: "${PROVISIONING_MYSQL_USER:?PROVISIONING_MYSQL_USER is required}"
+      PROVISIONING_MYSQL_PASSWORD: "${PROVISIONING_MYSQL_PASSWORD:?PROVISIONING_MYSQL_PASSWORD is required}"
+      TENANT_CREDENTIAL_PROVIDER: protected_file
+      TENANT_DB_CREDENTIALS_FILE: /var/lib/smartstudy/tenant-credentials/tenant_credentials.json
+      FILE_STORAGE_PROVIDER: "${FILE_STORAGE_PROVIDER:-local}"
+      OBJECT_STORAGE_BUCKET: "${OBJECT_STORAGE_BUCKET:-}"
+      FILE_SCANNER_PROVIDER: "${FILE_SCANNER_PROVIDER:-command}"
+      FILE_SCANNER_COMMAND: "${FILE_SCANNER_COMMAND:-clamdscan --stream --config-file=/etc/clamav/clamdscan.conf --no-summary}"
+      ALLOW_UNSCANNED_UPLOADS: "0"
+      TENANT_UPLOAD_QUOTA_BYTES: "${TENANT_UPLOAD_QUOTA_BYTES:?TENANT_UPLOAD_QUOTA_BYTES is required}"
+      UPLOAD_RETENTION_DAYS: "${UPLOAD_RETENTION_DAYS:?UPLOAD_RETENTION_DAYS is required}"
+      CELERY_BROKER_URL: "redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/0"
+      CELERY_RESULT_BACKEND: "redis://:${REDIS_PASSWORD}@redis:6379/1"
+      CELERY_EAGER: "0"
+      PROVISION_JOBS_FILE: /var/lib/smartstudy/provision/jobs.json
+      PROVISION_AUDIT_FILE: /var/lib/smartstudy/provision/audit.log
+    volumes:
+      - tenant_credentials:/var/lib/smartstudy/tenant-credentials
+      - provision_data:/var/lib/smartstudy/provision
+    depends_on:
+      control-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      malware-scanner:
+        condition: service_healthy
+
+volumes:
+  control_db_data:
+  redis_data:
+  tenant_credentials:
+  provision_data:
+  uploads_data:
+  clamav_signatures:
