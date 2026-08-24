@@ -3,8 +3,8 @@
 {% block content %}
 <div class="page-header" data-aos="fade-down">
     <div>
-        <h1>Staff Attendance Hub</h1>
-        <p>Log and manage administrative attendance for active teachers.</p>
+        <h1>Student Attendance Hub</h1>
+        <p>Log and manage attendance for students in this school.</p>
     </div>
 </div>
 
@@ -22,13 +22,13 @@
     
     <div class="card" style="border-top: 4px solid var(--purple);">
         <div class="card-header">
-            <span>👩‍🏫 Active Teachers · {{ selected_date }}</span>
+            <span>🧒 Active Students · {{ selected_date }}</span>
         </div>
         <div class="table-wrap">
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Teacher Name</th>
+                        <th>Student Name</th>
                         <th>Email</th>
                         <th>Daily Status</th>
                         <th>Operation Remark</th>
@@ -61,7 +61,7 @@
                         </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="4" style="text-align:center; color:#64748b; padding: 30px;">No active teachers found in database.</td></tr>
+                    <tr><td colspan="4" style="text-align:center; color:#64748b; padding: 30px;">No active students found in database.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

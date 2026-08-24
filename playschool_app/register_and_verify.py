@@ -79,10 +79,13 @@ def fetch_latest_otp(mail_user, mail_pass, subject_hint='Account Registration Ve
 
 
 def main():
+    if os.environ.get('FLASK_ENV', '').strip().lower() == 'production':
+        raise RuntimeError('This email integration helper is disabled in production.')
     env = read_env('.env')
     mail_user = env.get('MAIL_USERNAME')
     mail_pass = env.get('MAIL_PASSWORD')
-    if not mail_user or not mail_pass:
+    test_password = os.environ.get('TEST_REGISTRATION_PASSWORD', '')
+    if not mail_user or not mail_pass or not test_password:
         print('MAIL_USERNAME or MAIL_PASSWORD missing in .env')
         return
 
@@ -94,7 +97,7 @@ def main():
         'name': 'Auto Test',
         'email': mail_user,
         'phone': '9999999999',
-        'password': 'Testpass123',
+        'password': test_password,
         'role': 'super_admin'
     }
 

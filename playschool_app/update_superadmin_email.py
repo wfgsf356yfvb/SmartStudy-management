@@ -17,16 +17,23 @@ def read_env(path='.env'):
 
 
 def main():
+    if os.environ.get('FLASK_ENV', '').strip().lower() == 'production':
+        raise RuntimeError('This legacy account-normalization utility is disabled in production.')
     env = read_env('.env')
+    mysql_user = env.get('MYSQL_USER', '').strip()
+    new_email = os.environ.get('SUPERADMIN_TARGET_EMAIL', '').strip()
+    if not mysql_user or mysql_user.lower() == 'root':
+        raise RuntimeError('Set a non-root MYSQL_USER in the local environment.')
+    if not new_email:
+        raise RuntimeError('Set SUPERADMIN_TARGET_EMAIL explicitly.')
     cfg = {
         'host': env.get('MYSQL_HOST', 'localhost'),
-        'user': env.get('MYSQL_USER', 'root'),
+        'user': mysql_user,
         'password': env.get('MYSQL_PASSWORD', ''),
         'database': env.get('MYSQL_DB', 'playschool_db'),
         'port': int(env.get('MYSQL_PORT', 3306)),
     }
 
-    new_email = 'y0263320@gmail.com'
     try:
         cnx = mysql.connector.connect(**cfg)
     except mysql.connector.Error as err:

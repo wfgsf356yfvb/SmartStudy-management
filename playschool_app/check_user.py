@@ -18,10 +18,18 @@ def read_env(path='.env'):
 
 
 def main():
+    if os.environ.get('FLASK_ENV', '').strip().lower() == 'production':
+        raise RuntimeError('This diagnostic utility is disabled in production.')
     env = read_env('.env')
+    email = os.environ.get('DIAGNOSTIC_USER_EMAIL', '').strip()
+    mysql_user = env.get('MYSQL_USER', '').strip()
+    if not email:
+        raise RuntimeError('Set DIAGNOSTIC_USER_EMAIL explicitly.')
+    if not mysql_user or mysql_user.lower() == 'root':
+        raise RuntimeError('Set a non-root MYSQL_USER in the local environment.')
     cfg = {
         'host': env.get('MYSQL_HOST', 'localhost'),
-        'user': env.get('MYSQL_USER', 'root'),
+        'user': mysql_user,
         'password': env.get('MYSQL_PASSWORD', ''),
         'database': env.get('MYSQL_DB', 'playschool_db'),
         'port': int(env.get('MYSQL_PORT', 3306)),
@@ -34,7 +42,6 @@ def main():
         return
 
     cur = cnx.cursor(dictionary=True)
-    email = 'y0263320@gmail.com'
     cur.execute('SELECT * FROM users WHERE email=%s', (email,))
     row = cur.fetchone()
     if not row:

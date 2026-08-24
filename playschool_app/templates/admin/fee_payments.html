@@ -122,7 +122,7 @@
                     <td>{{ p.receipt_no or '-' }}</td>
                     <td>
                         {% if p.status == 'pending' %}
-                            <a href="{{ url_for('admin_verify_payment', payment_id=p.id) }}" class="btn-sm" style="background: #27ae60; color: white; padding: 4px 8px; border-radius: 4px; text-decoration: none; font-size: 12px;">✅ Verify</a>
+                            <a href="{{ url_for('verify_fee_payment', payment_id=p.id) }}" class="btn-sm" style="background: #27ae60; color: white; padding: 4px 8px; border-radius: 4px; text-decoration: none; font-size: 12px;">✅ Verify</a>
                         {% else %}
                             -
                         {% endif %}

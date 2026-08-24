@@ -3,29 +3,36 @@
 {% block content %}
 <div class="page-header">
     <h1>📘 Platform Docs</h1>
-    <p>Documentation for admins, teachers, and parents using the PlaySchool platform.</p>
+    <p>Documentation overview for the roles and workflows currently available in the PlaySchool platform.</p>
 </div>
 
 <div class="card" style="max-width: 1000px; margin: 30px auto; padding: 30px;">
     <h3>Admin Guide</h3>
     <ul>
-        <li>Manage school profiles and billing renewals</li>
-        <li>Track teacher and student activity</li>
-        <li>Broadcast announcements and monitor performance</li>
+        <li>Manage users, fee structures, payment submissions, and announcements</li>
+        <li>Review reports, staff attendance, and student progress</li>
+        <li>Review private payment receipt files within authorized school workflows</li>
     </ul>
 
     <h3>Teacher Guide</h3>
     <ul>
         <li>Mark attendance and assign homework</li>
-        <li>Submit weekly reports and track student progress</li>
-        <li>Review submissions and communicate with families</li>
+        <li>Submit weekly reports and record student progress</li>
+        <li>Review submissions, grade work, and publish announcements</li>
     </ul>
 
-    <h3>Parent Guide</h3>
+    <h3>Student Guide</h3>
     <ul>
-        <li>View attendance and homework updates</li>
-        <li>Monitor fee status and school notices</li>
-        <li>Stay informed with real-time communication</li>
+        <li>View attendance, homework, grades, and weekly progress</li>
+        <li>Submit homework and view teacher reference files</li>
+        <li>Review fee information and submit payment details with optional receipts</li>
+    </ul>
+
+    <h3>Security and operations</h3>
+    <ul>
+        <li>Tenant-aware routing and role-based authorization protect school workflows</li>
+        <li>Private uploads use tenant-scoped keys and authorized download routes</li>
+        <li>Super Admin provisioning, retry, audit, and recovery utilities are available; live production-service verification remains pending</li>
     </ul>
 </div>
 {% endblock %}

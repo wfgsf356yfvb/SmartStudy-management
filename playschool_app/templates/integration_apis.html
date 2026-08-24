@@ -1,21 +1,21 @@
 {% extends 'base.html' %}
-{% block title %}Integration APIs - PlaySchool{% endblock %}
+{% block title %}Integration Status - PlaySchool{% endblock %}
 {% block content %}
 <div class="page-header">
-    <h1>🔌 Integration APIs</h1>
-    <p>Connect your systems with PlaySchool through secure, structured API workflows.</p>
+    <h1>🔌 Integration Status</h1>
+    <p>PlaySchool currently provides role-based web workflows for school operations. A public third-party API is not advertised as generally available.</p>
 </div>
 
 <div class="card" style="max-width: 1000px; margin: 30px auto; padding: 30px;">
-    <h3>Core Integrations</h3>
+    <h3>Available application workflows</h3>
     <ul>
-        <li>School management sync</li>
-        <li>Parent communication channels</li>
-        <li>Payment gateway status checks</li>
-        <li>Attendance and reports exports</li>
+        <li>Tenant-aware school, user, attendance, homework, progress, and fee workflows</li>
+        <li>Announcements for school users</li>
+        <li>Protected receipt and homework file handling</li>
+        <li>Super Admin tenant provisioning and payment-review workflows</li>
     </ul>
 
-    <h3>Developer Workflow</h3>
-    <p>Use the PlaySchool backend endpoints to integrate student records, announcements, and school billing operations into your ecosystem.</p>
+    <h3>What is not currently advertised</h3>
+    <p>Razorpay integration, verified webhook handling, and a public developer API are not currently complete features. Object storage and malware scanning are supported as configurable architecture, but real production verification is still pending.</p>
 </div>
 {% endblock %}

@@ -2,6 +2,11 @@ services:
   control-db:
     image: mysql:8.0
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required only for MySQL bootstrap/maintenance}"
       MYSQL_DATABASE: "${MYSQL_DB:?MYSQL_DB is required}"
@@ -20,6 +25,11 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     environment:
       REDISCLI_AUTH: "${REDIS_PASSWORD:?REDIS_PASSWORD is required}"
     command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD is required}"]
@@ -36,6 +46,11 @@ services:
   malware-scanner:
     image: clamav/clamav:stable-debian13-slim
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     volumes:
       - clamav_signatures:/var/lib/clamav
     expose:
@@ -59,6 +74,7 @@ services:
       MYSQL_DB: "${MYSQL_DB:?MYSQL_DB is required}"
       MYSQL_USER: "${MYSQL_USER:?MYSQL_USER is required}"
       MYSQL_PASSWORD: "${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}"
+      TENANT_DB_USER_HOST: "${TENANT_DB_USER_HOST:?TENANT_DB_USER_HOST is required}"
       TENANT_BASE_DOMAIN: "${TENANT_BASE_DOMAIN:?TENANT_BASE_DOMAIN is required}"
       TRUSTED_PROXY_COUNT: "${TRUSTED_PROXY_COUNT:-1}"
       TENANT_CREDENTIAL_PROVIDER: protected_file
@@ -88,6 +104,11 @@ services:
         condition: service_healthy
     ports:
       - "${WEB_BIND_ADDRESS:-127.0.0.1}:${WEB_PORT:-5000}:5000"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import socket; s=socket.create_connection(('127.0.0.1',5000),2); s.close()\""]
       interval: 15s
@@ -108,6 +129,9 @@ services:
       MYSQL_PASSWORD: "${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}"
       PROVISIONING_MYSQL_USER: "${PROVISIONING_MYSQL_USER:?PROVISIONING_MYSQL_USER is required}"
       PROVISIONING_MYSQL_PASSWORD: "${PROVISIONING_MYSQL_PASSWORD:?PROVISIONING_MYSQL_PASSWORD is required}"
+      TENANT_GRANT_MYSQL_USER: "${TENANT_GRANT_MYSQL_USER:?TENANT_GRANT_MYSQL_USER is required}"
+      TENANT_GRANT_MYSQL_PASSWORD: "${TENANT_GRANT_MYSQL_PASSWORD:?TENANT_GRANT_MYSQL_PASSWORD is required}"
+      TENANT_DB_USER_HOST: "${TENANT_DB_USER_HOST:?TENANT_DB_USER_HOST is required}"
       TENANT_CREDENTIAL_PROVIDER: protected_file
       TENANT_DB_CREDENTIALS_FILE: /var/lib/smartstudy/tenant-credentials/tenant_credentials.json
       FILE_STORAGE_PROVIDER: "${FILE_STORAGE_PROVIDER:-local}"
@@ -132,6 +156,46 @@ services:
         condition: service_healthy
       malware-scanner:
         condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  scheduler:
+    build: .
+    restart: unless-stopped
+    command: ["celery", "-A", "scripts.celery_app.celery_app", "beat", "--loglevel=INFO"]
+    environment:
+      FLASK_ENV: production
+      MYSQL_HOST: control-db
+      MYSQL_PORT: "3306"
+      MYSQL_DB: "${MYSQL_DB:?MYSQL_DB is required}"
+      MYSQL_USER: "${MYSQL_USER:?MYSQL_USER is required}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}"
+      CELERY_BROKER_URL: "redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/0"
+      CELERY_RESULT_BACKEND: "redis://:${REDIS_PASSWORD}@redis:6379/1"
+      CELERY_EAGER: "0"
+      PRIVATE_UPLOAD_FOLDER: /app/instance/private_uploads
+      FILE_STORAGE_PROVIDER: "${FILE_STORAGE_PROVIDER:-local}"
+      UPLOAD_RETENTION_DAYS: "${UPLOAD_RETENTION_DAYS:?UPLOAD_RETENTION_DAYS is required}"
+      UPLOAD_BACKUP_BUCKET: "${UPLOAD_BACKUP_BUCKET:?UPLOAD_BACKUP_BUCKET is required}"
+      UPLOAD_BACKUP_PREFIX: "${UPLOAD_BACKUP_PREFIX:-private-uploads}"
+      FILE_MAINTENANCE_TENANTS_JSON: "${FILE_MAINTENANCE_TENANTS_JSON:?FILE_MAINTENANCE_TENANTS_JSON is required}"
+      PROVISION_AUDIT_FILE: /var/lib/smartstudy/provision/audit.log
+    volumes:
+      - provision_data:/var/lib/smartstudy/provision
+      - uploads_data:/app/instance/private_uploads
+    depends_on:
+      control-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
 
 volumes:
   control_db_data:

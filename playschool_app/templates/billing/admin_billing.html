@@ -3,7 +3,7 @@
 {% block content %}
 <div class="page-header">
     <h1>💳 Subscription & Billing</h1>
-    <p>Manage your school access validity and renewals.</p>
+    <p>Manage your school’s platform subscription. This billing area is separate from fees collected by your school.</p>
 </div>
 
 <div class="two-col">
@@ -25,7 +25,7 @@
             💸 Step 1: Pay Using Scan & Pay
         </div>
         <div class="card-body" style="padding: 20px; text-align:center; background: #f9fffb;">
-            <p style="margin-bottom: 10px; font-size: 14px; color: #27ae60; font-weight: bold;">Scan QR with GPay / PhonePe / Paytm</p>
+            <p style="margin-bottom: 10px; font-size: 14px; color: #27ae60; font-weight: bold;">Platform subscription: scan QR with your UPI app</p>
             {% set upi_id = config['UPI_ID'] %}
             {% set upi_name = config['UPI_NAME'] %}
             {% set qr_data = 'upi://pay?pa=' ~ upi_id ~ '&pn=' ~ upi_name ~ '&tn=SchoolRenewal' %}
@@ -76,7 +76,7 @@
                         <td>{{ p.payment_date }}</td>
                         <td><strong>₹{{ p.amount }}</strong></td>
                         <td>
-                            <span class="type-badge" style="background: {% if p.status == 'approved' %}#27ae60{% else %}#f39c12{% endif %};">
+                                <span class="type-badge" style="background: {% if p.status == 'paid' %}#27ae60{% else %}#f39c12{% endif %};">
                                 {{ p.status | capitalize }}
                             </span>
                         </td>

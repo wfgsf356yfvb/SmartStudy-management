@@ -55,3 +55,10 @@ Local deterministic coverage also verifies retention scoping/deletion, S3
 provider selection through a safe mock, production rejection of public storage
 and disabled scanning, migration idempotency and partial-failure cleanup, and
 atomic backup restore failure handling.
+
+The deployment now includes a supervised Celery beat `scheduler` service for
+tenant-scoped retention and protected off-host backup execution. It validates
+each server-generated tenant reference against the control database before
+deleting expired files or creating an encrypted S3 backup archive. Missing
+backup destination, invalid tenant context, unavailable storage, and failed
+checksums fail closed. Real staging execution remains required.

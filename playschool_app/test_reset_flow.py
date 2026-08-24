@@ -1,18 +1,30 @@
-from app import app
+"""Opt-in Flask reset-flow integration test requiring a live application DB."""
 
-with app.test_client() as c:
-    with c.session_transaction() as s:
-        s['otp_flow'] = 'forgot'
-        s['forgot_verified'] = True
-        s['otp_meta'] = {'email': 'y0263320@gmail.com'}
+import os
+import unittest
 
-    page = c.get('/reset-password')
-    print('GET /reset-password status:', page.status_code)
-    print('GET /reset-password has form:', 'new_password' in page.get_data(as_text=True) and 'confirm_password' in page.get_data(as_text=True))
 
-    post = c.post('/reset-password', data={
-        'new_password': 'Reset1234',
-        'confirm_password': 'Reset1234',
-    }, follow_redirects=False)
-    print('POST /reset-password status:', post.status_code)
-    print('POST /reset-password location:', post.headers.get('Location'))
+@unittest.skipUnless(
+    os.environ.get('RUN_FLASK_INTEGRATION') == '1',
+    'Flask reset integration requires RUN_FLASK_INTEGRATION=1 and live MySQL configuration',
+)
+class ResetFlowIntegrationTest(unittest.TestCase):
+    def test_reset_password_flow(self):
+        from app import app
+
+        with app.test_client() as client:
+            with client.session_transaction() as session:
+                session['otp_flow'] = 'forgot'
+                session['forgot_verified'] = True
+                session['otp_meta'] = {'email': os.environ['TEST_RESET_EMAIL']}
+            response = client.get('/reset-password')
+            self.assertEqual(response.status_code, 200)
+            response = client.post('/reset-password', data={
+                'new_password': os.environ['TEST_RESET_PASSWORD'],
+                'confirm_password': os.environ['TEST_RESET_PASSWORD'],
+            }, follow_redirects=False)
+            self.assertIn(response.status_code, (302, 303))
+
+
+if __name__ == '__main__':
+    unittest.main(verbosity=2)

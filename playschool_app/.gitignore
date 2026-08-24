@@ -1,6 +1,7 @@
 # Python byte-code
 __pycache__/
 *.py[cod]
+*.log
 *$py.class
 
 # Environments

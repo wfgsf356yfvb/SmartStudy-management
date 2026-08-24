@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}PlaySchool - The Future of Early Learning{% endblock %}
+{% block title %}PlaySchool - School Management for Growing Schools{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -285,7 +285,7 @@
 
 <!-- PREMIUM FLOATING NAVIGATION -->
 <nav class="header-glass">
-    <a href="{{ url_for('index') }}" class="brand">🎒 Play<span>School</span>.ai</a>
+    <a href="{{ url_for('index') }}" class="brand">🎒 Play<span>School</span></a>
     <div class="nav-group always" style="display:flex; align-items:center;">
         <a href="{{ url_for('register') }}" class="btn-plain">Register</a>
         <a href="{{ url_for('login') }}" class="btn-glow">Login</a>
@@ -295,20 +295,20 @@
 <!-- MAIN HERO EXPERIENCE -->
 <section class="hero-wrap">
     <div class="hero-badge" data-aos="fade-down">
-        <i class="fas fa-star"></i> #1 Preschool Management Platform 2026
+        <i class="fas fa-school"></i> School management for connected classrooms
     </div>
     
     <h1 class="title-giant" data-aos="fade-up" data-aos-delay="100">
-        One Platform, Total <br> <span class="magic-text">School Harmony.</span>
+        One Platform, Clearer <br> <span class="magic-text">School Operations.</span>
     </h1>
     
     <p class="desc-text" data-aos="fade-up" data-aos-delay="200">
-        Seamlessly manage attendance, grading, parent communication, and dynamic curriculum distribution all from one beautiful dashboard.
+        Manage schools, people, homework, progress, attendance, announcements, and fee workflows from one role-aware platform.
     </p>
 
     <div class="cta-box" data-aos="fade-up" data-aos-delay="300">
         <a href="{{ url_for('register') }}" class="btn-master btn-master-primary">
-            Start For Free <i class="fas fa-arrow-right"></i>
+            Explore the platform <i class="fas fa-arrow-right"></i>
         </a>
         <a href="#pricing" class="btn-master btn-master-outline">
             View Pricing
@@ -323,37 +323,100 @@
     </div>
 </section>
 
+<!-- IMPLEMENTED PLATFORM CAPABILITIES -->
+<section class="glass-sec" style="background:#fafafa; padding-top:90px; padding-bottom:90px;">
+    <div class="sec-header" data-aos="fade-up">
+        <h2>Built Around Real School Work</h2>
+        <p>Capabilities currently available in the SmartStudy management application.</p>
+    </div>
+
+    <div class="grid-cards">
+        <div class="cool-card" data-aos="fade-up">
+            <div class="icon-box bg-p"><i class="fas fa-school"></i></div>
+            <h3>Multi-school architecture</h3>
+            <p>Separate tenant context and database mapping help keep each school’s operational data isolated.</p>
+        </div>
+        <div class="cool-card" data-aos="fade-up" data-aos-delay="50">
+            <div class="icon-box bg-s"><i class="fas fa-users"></i></div>
+            <h3>People and roles</h3>
+            <p>School admins, teachers, students, and Super Admin operators have role-specific workflows and access.</p>
+        </div>
+        <div class="cool-card" data-aos="fade-up" data-aos-delay="100">
+            <div class="icon-box bg-a"><i class="fas fa-book-open"></i></div>
+            <h3>Homework and progress</h3>
+            <p>Teachers assign homework, students submit work, and teachers can grade and record progress reports.</p>
+        </div>
+        <div class="cool-card" data-aos="fade-up" data-aos-delay="150">
+            <div class="icon-box bg-p"><i class="fas fa-calendar-check"></i></div>
+            <h3>Attendance and communication</h3>
+            <p>Record class and staff attendance, publish announcements, and keep school updates in one place.</p>
+        </div>
+        <div class="cool-card" data-aos="fade-up" data-aos-delay="200">
+            <div class="icon-box bg-s"><i class="fas fa-receipt"></i></div>
+            <h3>Fees and receipts</h3>
+            <p>Configure fee structures, receive payment submissions, review status, and access private receipt files.</p>
+        </div>
+        <div class="cool-card" data-aos="fade-up" data-aos-delay="250">
+            <div class="icon-box bg-a"><i class="fas fa-shield-halved"></i></div>
+            <h3>Private, protected files</h3>
+            <p>Uploads use tenant-scoped private keys, content checks, traversal protection, and ownership-aware downloads.</p>
+        </div>
+    </div>
+</section>
+
+<!-- OPERATIONS AND SECURITY -->
+<section class="glass-sec" style="background:white; padding-top:90px; padding-bottom:90px;">
+    <div class="sec-header" data-aos="fade-up">
+        <h2>Designed for Controlled Growth</h2>
+        <p>Operational capabilities are available today; live infrastructure verification remains a separate deployment gate.</p>
+    </div>
+    <div class="grid-cards">
+        <div class="cool-card" data-aos="fade-up">
+            <h3><i class="fas fa-diagram-project" style="color:var(--primary);"></i> Automated provisioning</h3>
+            <p>Super Admin operators can start, monitor, retry, and audit tenant provisioning through Celery-backed workflows. Production worker verification is pending.</p>
+        </div>
+        <div class="cool-card" data-aos="fade-up" data-aos-delay="75">
+            <h3><i class="fas fa-database" style="color:var(--primary);"></i> Recovery tooling</h3>
+            <p>Private-upload backup and restore utilities include tenant checks and checksum validation. Off-host production backup drills are pending.</p>
+        </div>
+        <div class="cool-card" data-aos="fade-up" data-aos-delay="150">
+            <h3><i class="fas fa-lock" style="color:var(--primary);"></i> Fail-closed controls</h3>
+            <p>Invalid tenant context, unauthorized file access, unsafe storage configuration, and unavailable required scanning are rejected.</p>
+        </div>
+    </div>
+</section>
+
 <!-- PRICING GRID -->
 <section id="pricing" class="glass-sec" style="background:white;">
     <div class="sec-header" data-aos="fade-up">
         <h2>Transparent Value</h2>
-        <p>Pick the scaling licensing tier that scales exactly with your specific classroom population count.</p>
+        <p>Plans and prices are configurable by deployment. Contact the operator for current licensing terms and school size options.</p>
     </div>
 
     <div class="price-wrap">
         <div class="price-tile" data-aos="fade-right">
             <h3>Standard School</h3>
-            <div class="price">₹4,999 <span>/Year</span></div>
+            <div class="price">Configurable <span>per deployment</span></div>
             <ul class="perk-list">
-                <li><i class="fas fa-check-circle"></i> Up to 100 Students</li>
-                <li><i class="fas fa-check-circle"></i> Complete Grading Access</li>
-                <li><i class="fas fa-check-circle"></i> Attendance Management</li>
-                <li style="opacity:0.5;"><i class="fas fa-times-circle" style="color:#ccc;"></i> Dedicated Support Manager</li>
+                <li><i class="fas fa-check-circle"></i> School and user management</li>
+                <li><i class="fas fa-check-circle"></i> Homework, attendance, and progress</li>
+                <li><i class="fas fa-check-circle"></i> Fees, payments, and private receipts</li>
+                <li><i class="fas fa-check-circle"></i> Role-based school access</li>
             </ul>
-            <a href="{{ url_for('admin_billing') }}" class="btn-buy btn-buy-light">Choose Standard</a>
+            <a href="{{ url_for('register') }}" class="btn-buy btn-buy-light">Request access</a>
         </div>
 
         <div class="price-tile accent" data-aos="fade-up">
             <div style="background:var(--primary); padding:5px 15px; border-radius:20px; display:inline-block; font-size:12px; font-weight:800; text-transform:uppercase; margin-bottom:15px;">Recommended</div>
             <h3>Enterprise Campus</h3>
-            <div class="price">₹9,999 <span>/Year</span></div>
+            <div class="price">Contact us <span>for current terms</span></div>
             <ul class="perk-list">
-                <li><i class="fas fa-check-circle"></i> Unlimited Students</li>
-                <li><i class="fas fa-check-circle"></i> Complete Grading Access</li>
-                <li><i class="fas fa-check-circle"></i> Multi-Branch Management</li>
-                <li><i class="fas fa-check-circle"></i> 24/7 Phone Support</li>
+                <li><i class="fas fa-check-circle"></i> Tenant-aware school operations</li>
+                <li><i class="fas fa-check-circle"></i> Super Admin provisioning workflow</li>
+                <li><i class="fas fa-check-circle"></i> Private tenant-scoped files</li>
+                <li><i class="fas fa-check-circle"></i> Configurable deployment controls</li>
             </ul>
-            <a href="{{ url_for('admin_billing') }}" class="btn-buy btn-buy-solid">Go Premium Today</a>
+            <a href="{{ url_for('register') }}" class="btn-buy btn-buy-solid">Discuss your school</a>
         </div>
     </div>
 </section>
@@ -362,8 +425,8 @@
 <footer class="site-foot">
     <div class="foot-grid">
         <div class="foot-col">
-            <h4>PlaySchool.ai</h4>
-            <p>Redefining global early childhood administrative software to let educators focus solely on teaching.</p>
+            <h4>PlaySchool</h4>
+            <p>Practical school-management workflows for administrators, teachers, and students.</p>
         </div>
         <div class="foot-col">
             <h5>Product</h5>

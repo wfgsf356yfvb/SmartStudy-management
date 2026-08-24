@@ -27,6 +27,64 @@ CREATE TABLE IF NOT EXISTS payments (
     FOREIGN KEY (school_id) REFERENCES schools(id)
 );
 
+-- Platform subscription billing only. School fee money remains separate.
+CREATE TABLE IF NOT EXISTS platform_subscription_plans (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(64) NOT NULL UNIQUE,
+    name VARCHAR(120) NOT NULL,
+    amount DECIMAL(12,2) NOT NULL,
+    currency CHAR(3) NOT NULL DEFAULT 'INR',
+    duration_days INT NOT NULL,
+    grace_days INT NOT NULL DEFAULT 0,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS platform_subscription_payments (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    school_id INT NOT NULL,
+    plan_id INT NULL,
+    amount DECIMAL(12,2) NOT NULL,
+    duration_days INT NOT NULL DEFAULT 30,
+    currency CHAR(3) NOT NULL DEFAULT 'INR',
+    status VARCHAR(24) NOT NULL DEFAULT 'pending',
+    reconciliation_status VARCHAR(32) NOT NULL DEFAULT 'unreconciled',
+    provider VARCHAR(32) NOT NULL DEFAULT 'manual_upi',
+    provider_order_id VARCHAR(128) NULL UNIQUE,
+    provider_payment_id VARCHAR(128) NULL UNIQUE,
+    provider_refund_id VARCHAR(128) NULL,
+    provider_dispute_id VARCHAR(128) NULL,
+    idempotency_key VARCHAR(160) NOT NULL UNIQUE,
+    invoice_no VARCHAR(96) NOT NULL,
+    receipt_file VARCHAR(255) NULL,
+    notes TEXT NULL,
+    paid_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
+    FOREIGN KEY (plan_id) REFERENCES platform_subscription_plans(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS platform_payment_events (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    event_id VARCHAR(200) NOT NULL UNIQUE,
+    event_type VARCHAR(120) NOT NULL,
+    payload_sha256 CHAR(64) NOT NULL,
+    status VARCHAR(24) NOT NULL DEFAULT 'received',
+    processed_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS school_payment_config (
+    school_id INT PRIMARY KEY,
+    provider VARCHAR(32) NOT NULL DEFAULT 'manual_upi',
+    upi_id VARCHAR(160) NULL,
+    display_name VARCHAR(160) NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
+);
+
 -- Users Table (Super Admin, Admin, Teacher, Student)
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,

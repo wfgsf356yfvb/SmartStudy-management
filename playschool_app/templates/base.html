@@ -108,6 +108,10 @@
                 class="nav-item {% if request.endpoint=='admin_fees' %}active{% endif %}">
                 <span class="nav-icon">ðŸ’°</span> <span>Fee Structure</span>
             </a>
+            <a href="{{ url_for('admin_fee_payment_config') }}"
+                class="nav-item {% if request.endpoint=='admin_fee_payment_config' %}active{% endif %}">
+                <span class="nav-icon">ðŸ¦</span> <span>School Fee Payment Settings</span>
+            </a>
             <a href="{{ url_for('admin_billing') }}"
                 class="nav-item {% if request.endpoint=='admin_billing' %}active{% endif %}">
                 <span class="nav-icon">ðŸ’³</span> <span>School Subscription</span>

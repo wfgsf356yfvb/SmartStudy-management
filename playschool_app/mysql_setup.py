@@ -66,15 +66,14 @@ def create_database():
         raise
 
 
-def create_database_for(db_name):
+def create_database_for(db_name, connection_config=None):
     """Create a named database if it doesn't exist."""
     try:
-        conn = mysql.connector.connect(
-            host=MYSQL_HOST,
-            user=MYSQL_USER,
-            password=MYSQL_PASSWORD,
-            port=MYSQL_PORT
-        )
+        config = connection_config or {
+            'host': MYSQL_HOST, 'user': MYSQL_USER,
+            'password': MYSQL_PASSWORD, 'port': MYSQL_PORT,
+        }
+        conn = mysql.connector.connect(**config)
         cursor = conn.cursor()
         cursor.execute(
             f"""
@@ -148,6 +147,43 @@ def create_tables():
         """)
 
         print("  ✅ payments table")
+
+        cursor.execute("""CREATE TABLE IF NOT EXISTS platform_subscription_plans (
+            id INT AUTO_INCREMENT PRIMARY KEY, code VARCHAR(64) NOT NULL UNIQUE,
+            name VARCHAR(120) NOT NULL, amount DECIMAL(12,2) NOT NULL,
+            currency CHAR(3) NOT NULL DEFAULT 'INR', duration_days INT NOT NULL,
+            grace_days INT NOT NULL DEFAULT 0, is_active TINYINT(1) NOT NULL DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4""")
+        cursor.execute("""CREATE TABLE IF NOT EXISTS platform_subscription_payments (
+            id BIGINT AUTO_INCREMENT PRIMARY KEY, school_id INT NOT NULL, plan_id INT NULL,
+            amount DECIMAL(12,2) NOT NULL, duration_days INT NOT NULL DEFAULT 30,
+            currency CHAR(3) NOT NULL DEFAULT 'INR',
+            status VARCHAR(24) NOT NULL DEFAULT 'pending', reconciliation_status VARCHAR(32) NOT NULL DEFAULT 'unreconciled',
+            provider VARCHAR(32) NOT NULL DEFAULT 'manual_upi', provider_order_id VARCHAR(128) NULL UNIQUE,
+            provider_payment_id VARCHAR(128) NULL UNIQUE, provider_refund_id VARCHAR(128) NULL,
+            provider_dispute_id VARCHAR(128) NULL,
+            idempotency_key VARCHAR(160) NOT NULL UNIQUE, invoice_no VARCHAR(96) NOT NULL,
+            receipt_file VARCHAR(255) NULL, notes TEXT NULL, paid_at TIMESTAMP NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
+            FOREIGN KEY (plan_id) REFERENCES platform_subscription_plans(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4""")
+        cursor.execute("""CREATE TABLE IF NOT EXISTS platform_payment_events (
+            id BIGINT AUTO_INCREMENT PRIMARY KEY, event_id VARCHAR(200) NOT NULL UNIQUE,
+            event_type VARCHAR(120) NOT NULL, payload_sha256 CHAR(64) NOT NULL,
+            status VARCHAR(24) NOT NULL DEFAULT 'received', processed_at TIMESTAMP NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4""")
+        cursor.execute("""CREATE TABLE IF NOT EXISTS school_payment_config (
+            school_id INT PRIMARY KEY, provider VARCHAR(32) NOT NULL DEFAULT 'manual_upi',
+            upi_id VARCHAR(160) NULL, display_name VARCHAR(160) NULL,
+            is_active TINYINT(1) NOT NULL DEFAULT 0,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4""")
+        print("  ✅ Phase 5 billing domain tables")
 
         # ----------------------------------------------------
         # Users Table
@@ -419,6 +455,7 @@ def create_tables():
 
                 payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 payment_method VARCHAR(50) DEFAULT 'cash',
+                payment_domain VARCHAR(32) NOT NULL DEFAULT 'school_fee',
 
                 receipt_no VARCHAR(50),
                 receipt_file VARCHAR(255),
@@ -472,16 +509,17 @@ def seed_data():
     return create_tables_for_db(MYSQL_DB)
 
 
-def create_tables_for_db(db_name):
+def create_tables_for_db(db_name, connection_config=None):
     """Create all tables in the specified database."""
     try:
-        conn = mysql.connector.connect(
-            host=MYSQL_HOST,
-            user=MYSQL_USER,
-            password=MYSQL_PASSWORD,
-            database=db_name,
-            port=MYSQL_PORT
-        )
+        config = connection_config or {
+            'host': MYSQL_HOST, 'user': MYSQL_USER,
+            'password': MYSQL_PASSWORD, 'database': db_name,
+            'port': MYSQL_PORT,
+        }
+        config = dict(config)
+        config['database'] = db_name
+        conn = mysql.connector.connect(**config)
 
         cursor = conn.cursor()
 

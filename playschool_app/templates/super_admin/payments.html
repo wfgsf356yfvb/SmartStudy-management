@@ -28,26 +28,27 @@
                 <td><strong>{{ p.school_name }}</strong></td>
                 <td style="font-weight:bold; color: #27ae60;">₹{{ p.amount }}</td>
                 <td>
-                    {% if p.screenshot %}
-                    <a href="{{ url_for('static', filename='uploads/' + p.screenshot) }}" target="_blank" class="btn-sm" style="padding: 3px 8px; font-size: 11px; background: #3498db; color:white;">🖼️ View Receipt</a>
+                    {% if p.receipt_file %}
+                    <a href="{{ url_for('uploaded_file', filename=p.receipt_file) }}" target="_blank" class="btn-sm" style="padding: 3px 8px; font-size: 11px; background: #3498db; color:white;">🖼️ View Receipt</a>
                     {% else %}
                     <span style="color:#999; font-size:11px;">No Proof</span>
                     {% endif %}
                     <br><small>{{ p.notes or '--' }}</small>
                 </td>
                 <td>
-                    <span class="type-badge" style="background:{% if p.status == 'approved' %}#27ae60{% else %}#e67e22{% endif %};">
+                    <span class="type-badge" style="background:{% if p.status == 'paid' %}#27ae60{% else %}#e67e22{% endif %};">
                         {{ p.status | upper }}
                     </span>
                 </td>
                 <td>
                     {% if p.status == 'pending' %}
-                    <a href="{{ url_for('super_admin_approve_payment', pid=p.id) }}" 
+                    <form method="post" action="{{ url_for('super_admin_approve_payment', pid=p.id) }}" style="display:inline;">
+                    <button type="submit"
                        class="btn-sm" 
                        style="background: linear-gradient(to bottom, #27ae60, #2ecc71); color:white;"
-                       onclick="return confirm('Approve and extend this school by 12 months?');">
+                       onclick="return confirm('Approve and extend this school subscription?');">
                        ✅ Approve
-                    </a>
+                    </button></form>
                     {% else %}
                     <span style="color:#95a5a6; font-size:12px;">Confirmed</span>
                     {% endif %}

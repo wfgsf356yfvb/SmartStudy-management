@@ -35,6 +35,8 @@ MYSQL_PASSWORD=<control/application password>
 MYSQL_ROOT_PASSWORD=<bootstrap/maintenance-only root password>
 PROVISIONING_MYSQL_USER=<separate non-root provisioning account>
 PROVISIONING_MYSQL_PASSWORD=<provisioning account password>
+TENANT_GRANT_MYSQL_USER=<separate grant-only account>
+TENANT_GRANT_MYSQL_PASSWORD=<grant-only account password>
 REDIS_PASSWORD=<random Redis password>
 TENANT_BASE_DOMAIN=<canonical production base domain>
 TRUSTED_PROXY_COUNT=<exact number of trusted reverse proxies, normally 1 behind Nginx>
@@ -62,6 +64,17 @@ private bucket and tenant-prefixed objects with server-side encryption; it does
 not fall back to local storage if S3 is unavailable. Scanner failure rejects
 the upload. Install and supervise ClamAV/`clamdscan` (or an equivalent
 command-compatible scanner) before enabling uploads.
+
+Production tenant provisioning also requires `TENANT_DB_USER_HOST`. Set this
+to the exact private Docker/VPC subnet pattern used by the MySQL client
+containers, for example `172.20.%`; a global `%` host is rejected. Credential
+provider selection is server configuration only and is never a browser option.
+
+The `scheduler` service runs tenant-scoped Phase 4 retention and protected
+off-host upload-backup work. It requires `UPLOAD_BACKUP_BUCKET` and an explicit
+server-generated `FILE_MAINTENANCE_TENANTS_JSON` list. Missing or invalid
+maintenance configuration fails closed. All Compose services use bounded JSON
+log rotation (`10m`, five files).
 
 The production Compose profile adds `malware-scanner` using the official
 `clamav/clamav:stable-debian13-slim` image. It exposes only the internal
@@ -93,6 +106,28 @@ web process receives only the non-root control database account. Neither process
 receives MySQL root credentials.
 
 ## MySQL account prerequisites
+
+The tenant grant account is a separate non-root account used only by the
+provisioning worker for the exact tenant grant. It must differ from
+`PROVISIONING_MYSQL_USER`, must not be `root`, and must not have `CREATE USER`,
+`CREATE`, `DROP`, or `ALTER`. Its bootstrap scope is the four tenant DML
+privileges (`SELECT`, `INSERT`, `UPDATE`, and `DELETE`) with `GRANT OPTION` so
+MySQL 8.0 can delegate those privileges to a dynamically created tenant
+database account. The tenant runtime user itself never receives `GRANT OPTION`.
+
+`TENANT_GRANT_MYSQL_USER` and `TENANT_GRANT_MYSQL_PASSWORD` are injected only
+into the Celery provisioning worker. They are not provided to `web`,
+`scheduler`, or ordinary application processes. Store them in the protected
+deployment environment and rotate them through the normal MySQL bootstrap/
+maintenance procedure; never put them in Git, images, logs, audit records, or
+job results. Local Windows development uses a disposable localhost grant-only
+account configured through the same two environment variables.
+
+Because this MySQL privilege is inherently sensitive, restrict the grant
+account's MySQL host to the private worker network and monitor its use. Existing
+tenants are not rewritten automatically. Audit their grants first, migrate only
+through an approved maintenance operation, and preserve the existing
+compensating rollback behavior if a new grant fails.
 
 Use root only during a controlled bootstrap/maintenance operation. Create the
 control application account and the separate provisioning account with the

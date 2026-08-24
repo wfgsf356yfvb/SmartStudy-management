@@ -1,10 +1,18 @@
+import os
+
+if os.environ.get('FLASK_ENV', '').strip().lower() == 'production':
+    raise RuntimeError('This reset-flow helper is disabled in production.')
+test_email = os.environ.get('TEST_RESET_EMAIL', '').strip()
+if not test_email:
+    raise RuntimeError('Set TEST_RESET_EMAIL explicitly.')
+
 from app import app
 
 with app.test_client() as c:
     with c.session_transaction() as s:
         s['otp_flow'] = 'forgot'
         s['forgot_verified'] = True
-        s['otp_meta'] = {'email': 'y0263320@gmail.com'}
+        s['otp_meta'] = {'email': test_email}
 
     page = c.get('/reset-password')
     print('status', page.status_code)

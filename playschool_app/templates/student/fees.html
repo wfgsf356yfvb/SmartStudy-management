@@ -215,6 +215,15 @@
     </div>
 </div>
 
+{% if school_payment_config and school_payment_config.is_active and school_payment_config.upi_id %}
+<div class="card" style="margin:20px 0;padding:16px;">
+    <strong>School fee payment instructions</strong>
+    <p style="margin:6px 0 0;">Pay the school directly using UPI ID <strong>{{ school_payment_config.upi_id }}</strong>{% if school_payment_config.display_name %} ({{ school_payment_config.display_name }}){% endif %}, then submit the reference and receipt below.</p>
+</div>
+{% else %}
+<div class="card" style="margin:20px 0;padding:16px;">Your school has not enabled UPI instructions. Contact the school office for an available fee payment method.</div>
+{% endif %}
+
 <!-- Your Class Fees -->
 {% if fees %}
 <div class="section-heading" data-aos="fade-up">

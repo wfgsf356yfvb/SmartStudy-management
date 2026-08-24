@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}School Fee Payment Settings - PlaySchool{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>🏫 School Fee Payment Settings</h1>
+    <p>Configure the payment instructions that belong to this school only. These settings never control platform subscription billing.</p>
+</div>
+<div class="card" style="max-width:720px;margin:30px auto;padding:25px;">
+    <form method="post">
+        <div class="form-group">
+            <label>School fee payment method</label>
+            <select name="provider" class="form-input">
+                <option value="manual_upi" {% if not payment_config or payment_config.provider == 'manual_upi' %}selected{% endif %}>Manual UPI / receipt verification</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>School UPI ID</label>
+            <input name="upi_id" class="form-input" value="{{ payment_config.upi_id if payment_config else '' }}" placeholder="school@example">
+        </div>
+        <div class="form-group">
+            <label>Display name</label>
+            <input name="display_name" class="form-input" value="{{ payment_config.display_name if payment_config else '' }}" placeholder="School fee account">
+        </div>
+        <label style="display:flex;gap:8px;align-items:center;margin:15px 0;">
+            <input type="checkbox" name="is_active" value="1" {% if payment_config and payment_config.is_active %}checked{% endif %}>
+            Enable these instructions for school fee submissions
+        </label>
+        <button class="btn-primary" type="submit">Save school fee settings</button>
+    </form>
+</div>
+{% endblock %}

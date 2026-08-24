@@ -33,7 +33,7 @@ Quick start (development)
 
 	pip install -r requirements.txt
 
-3. Configure environment (copy `.env.example` -> `.env` and edit values)
+3. Configure environment explicitly; no `.env.example` is committed.
 
 4. Start Redis (optional for background tasks) or run tasks eagerly for development:
 
@@ -64,13 +64,12 @@ Provisioning tenants
 
 - Super Admin provisioning requires a controlled operator workflow; no default account is seeded.
 - CLI: `python scripts/provision_tenant.py --name "My School" --subdomain mysn`
-- To store tenant DB credentials in AWS Secrets Manager, set `USE_AWS_SECRETS=1` or use `--use-aws` flag.
+- Select `TENANT_CREDENTIAL_PROVIDER` explicitly (`protected_file`, `environment`, or `aws`). For the one-VPS production profile, use `protected_file` with an operator-owned protected path.
 
 Security & production notes
 
-- Set `USE_AWS_SECRETS=1` and provide AWS credentials/role for Secrets Manager in production.
-- Configure `TENANT_DB_USER_HOST` to restrict tenant DB user to specific host (default: `localhost` for local MySQL, `%` otherwise).
-- Avoid `CREATE USER ... '@%'` in production; use least-privileged hosts and minimal privileges.
+- In production, use `docker-compose.production.yml` and provide its required environment variables through a protected deployment environment.
+- Configure `TENANT_DB_USER_HOST` only with a specific validated host; wildcard hosts and `ALL PRIVILEGES` grants are rejected by provisioning.
 - Rotate tenant DB passwords and enforce secret lifecycle policies in the secrets store.
 
 Support

@@ -1,211 +1,346 @@
-"""Provision a new tenant: create control record, create tenant DB, and run schema.
+"""Secure, compensating provisioning workflow for one tenant."""
 
-Usage:
-    python scripts/provision_tenant.py --name "My School" --subdomain mysn
-
-Environment: expects MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DB (control DB name) and MYSQL_PORT to be set (via .env or env vars).
-"""
 import argparse
 import os
+import re
+import secrets
 import sys
+
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
+
 import mysql.connector
-from mysql.connector import Error
+
 from mysql_setup import create_database_for, create_tables_for_db
-from tenant_services.secrets_manager import store_tenant_db_credentials
-import secrets
-import os
+from tenant_services.middleware.tenant_resolver import validate_subdomain
+from tenant_services.secrets_manager import (
+    CredentialNotFound,
+    delete_tenant_db_credentials,
+    ensure_tenant_credential_provider_writable,
+    get_tenant_db_credentials,
+    store_tenant_db_credentials,
+)
+from scripts.audit import log as audit_log
+
 
 MYSQL_HOST = os.environ.get('MYSQL_HOST', 'localhost')
-MYSQL_USER = os.environ.get('MYSQL_USER', '')
-MYSQL_PASSWORD = os.environ.get('MYSQL_PASSWORD', '')
 CONTROL_DB = os.environ.get('MYSQL_DB', 'playschool_db')
 MYSQL_PORT = int(os.environ.get('MYSQL_PORT', 3306))
 
 
-def insert_control_school(name, address, subdomain):
-    conn = mysql.connector.connect(
-        host=MYSQL_HOST,
-        user=MYSQL_USER,
-        password=MYSQL_PASSWORD,
-        database=CONTROL_DB,
-        port=MYSQL_PORT
+class ProvisioningError(RuntimeError):
+    """A provisioning step failed and was compensated where possible."""
+
+
+def _admin_config(database=None):
+    user = os.environ.get('PROVISIONING_MYSQL_USER', '').strip()
+    password = os.environ.get('PROVISIONING_MYSQL_PASSWORD', '')
+    if not user or not password or user.lower() == 'root':
+        raise ProvisioningError('A non-root provisioning database account is required.')
+    config = {'host': MYSQL_HOST, 'user': user, 'password': password, 'port': MYSQL_PORT}
+    if database:
+        config['database'] = database
+    return config
+
+
+def _grant_config():
+    user = os.environ.get('TENANT_GRANT_MYSQL_USER', '').strip()
+    password = os.environ.get('TENANT_GRANT_MYSQL_PASSWORD', '')
+    provisioning_user = os.environ.get('PROVISIONING_MYSQL_USER', '').strip()
+    if not user or not password:
+        raise ProvisioningError('A separate tenant grant database account is required.')
+    if user.lower() == 'root' or user.lower() == provisioning_user.lower():
+        raise ProvisioningError('The tenant grant database account must be non-root and separate.')
+    return {'host': MYSQL_HOST, 'user': user, 'password': password, 'port': MYSQL_PORT}
+
+
+def _identifier(value, label):
+    if not isinstance(value, str) or not re.fullmatch(r'[A-Za-z0-9_]+', value):
+        raise ProvisioningError(f'Invalid {label}.')
+    return value
+
+
+def _normalized_subdomain_identifier(subdomain):
+    """Convert a validated hostname label into a MySQL identifier fragment."""
+    if not isinstance(subdomain, str):
+        raise ProvisioningError('Invalid tenant subdomain.')
+    return _identifier(subdomain.replace('-', '_'), 'tenant identifier')
+
+
+def tenant_database_name(subdomain):
+    subdomain = validate_subdomain(subdomain)
+    return _identifier(
+        f'playschool_tenant_{_normalized_subdomain_identifier(subdomain)}',
+        'tenant database name',
     )
-    cur = conn.cursor()
-    cur.execute("SELECT id FROM schools WHERE subdomain=%s", (subdomain,))
-    if cur.fetchone():
-        print(f"Control record for subdomain '{subdomain}' already exists.")
-        cur.close()
+
+
+def tenant_database_username(subdomain):
+    subdomain = validate_subdomain(subdomain)
+    return _identifier(
+        f'playschool_{_normalized_subdomain_identifier(subdomain)}',
+        'tenant database user',
+    )
+
+
+def _validated_tenant_database_name(subdomain, dbname=None):
+    canonical_dbname = tenant_database_name(subdomain)
+    if dbname is None:
+        return canonical_dbname
+    dbname = _identifier(dbname, 'tenant database name')
+    if dbname != canonical_dbname:
+        raise ProvisioningError('Tenant database name must match the canonical subdomain-derived name.')
+    return dbname
+
+
+def _account_host():
+    host = os.environ.get('TENANT_DB_USER_HOST', '').strip()
+    if not host:
+        raise ProvisioningError('TENANT_DB_USER_HOST is required for tenant database accounts.')
+    # MySQL host wildcards are allowed only for a specifically configured
+    # private Docker/VPC subnet; a global wildcard is never accepted.
+    private_wildcard = re.fullmatch(
+        r'(?:10\.[0-9]{1,3}(?:\.[0-9]{1,3})?|'
+        r'172\.(?:1[6-9]|2[0-9]|3[0-1])(?:\.[0-9]{1,3})?|'
+        r'192\.168\.[0-9]{1,3})\.%',
+        host,
+    )
+    exact_host = re.fullmatch(r'[A-Za-z0-9_.:-]+', host)
+    if host == '%' or (not exact_host and not private_wildcard):
+        raise ProvisioningError('Tenant database account host must be an explicit host or private subnet wildcard.')
+    return host
+
+
+def _account_sql(value):
+    return value.replace('`', '``').replace("'", "''")
+
+
+def get_control_school_by_subdomain(subdomain):
+    subdomain = validate_subdomain(subdomain)
+    conn = mysql.connector.connect(**_admin_config(CONTROL_DB))
+    try:
+        cur = conn.cursor(dictionary=True)
+        cur.execute(
+            'SELECT id, name, subdomain, subscription_status FROM schools WHERE subdomain=%s',
+            (subdomain,),
+        )
+        return cur.fetchone()
+    finally:
+        try:
+            cur.close()
+        except Exception:
+            pass
         conn.close()
-        return None
-    cur.execute(
-        "INSERT INTO schools (name,address,subdomain,subscription_status,valid_until) VALUES (%s,%s,%s,'active', DATE_ADD(NOW(), INTERVAL 1 YEAR))",
-        (name, address, subdomain)
-    )
-    conn.commit()
-    cur.execute("SELECT id FROM schools WHERE subdomain=%s", (subdomain,))
-    row = cur.fetchone()
-    cur.close()
-    conn.close()
-    if row:
-        return row[0]
-    return None
+
+
+def insert_control_school(name, address, subdomain, status='provisioning'):
+    subdomain = validate_subdomain(subdomain)
+    conn = mysql.connector.connect(**_admin_config(CONTROL_DB))
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO schools (name,address,subdomain,subscription_status,valid_until) "
+            "VALUES (%s,%s,%s,%s, DATE_ADD(NOW(), INTERVAL 1 YEAR))",
+            (name, address, subdomain, status),
+        )
+        conn.commit()
+        return cur.lastrowid
+    except Exception as exc:
+        conn.rollback()
+        raise ProvisioningError('Control database mapping could not be created.') from exc
+    finally:
+        try:
+            cur.close()
+        except Exception:
+            pass
+        conn.close()
+
+
+def activate_control_school(school_id, subdomain):
+    conn = mysql.connector.connect(**_admin_config(CONTROL_DB))
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE schools SET subscription_status='active' WHERE id=%s AND subdomain=%s AND subscription_status='provisioning'",
+            (school_id, subdomain),
+        )
+        if cur.rowcount != 1:
+            raise ProvisioningError('Control database mapping could not be activated.')
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        try:
+            cur.close()
+        except Exception:
+            pass
+        conn.close()
+
+
+def delete_control_school(school_id, subdomain):
+    conn = mysql.connector.connect(**_admin_config(CONTROL_DB))
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "DELETE FROM schools WHERE id=%s AND subdomain=%s AND subscription_status='provisioning'",
+            (school_id, subdomain),
+        )
+        conn.commit()
+    finally:
+        try:
+            cur.close()
+        except Exception:
+            pass
+        conn.close()
+
+
+def _create_tenant_user(dbname, username, password, grant_host):
+    dbname = _identifier(dbname, 'tenant database name')
+    username = _identifier(username, 'tenant database user')
+    host = _account_sql(grant_host)
+    admin_conn = mysql.connector.connect(**_admin_config())
+    grant_conn = None
+    try:
+        admin_cur = admin_conn.cursor()
+        admin_cur.execute(
+            f"CREATE USER IF NOT EXISTS '{_account_sql(username)}'@'{host}' IDENTIFIED BY %s",
+            (password,),
+        )
+        grant_conn = mysql.connector.connect(**_grant_config())
+        grant_cur = grant_conn.cursor()
+        grant_cur.execute(
+            f"GRANT SELECT, INSERT, UPDATE, DELETE "
+            f"ON `{dbname}`.* TO '{_account_sql(username)}'@'{host}'"
+        )
+        grant_conn.commit()
+        admin_conn.commit()
+    except Exception as exc:
+        try:
+            admin_conn.rollback()
+        except Exception:
+            pass
+        if grant_conn is not None:
+            try:
+                grant_conn.rollback()
+            except Exception:
+                pass
+        raise ProvisioningError(
+            'Tenant database account could not be created.'
+        ) from exc
+    finally:
+        try:
+            admin_cur.close()
+        except Exception:
+            pass
+        try:
+            grant_cur.close()
+        except Exception:
+            pass
+        admin_conn.close()
+        if grant_conn is not None:
+            grant_conn.close()
+
+
+def _cleanup_database_and_user(dbname, username, grant_host):
+    conn = mysql.connector.connect(**_admin_config())
+    try:
+        cur = conn.cursor()
+        host = _account_sql(grant_host)
+        cur.execute(f"DROP USER IF EXISTS '{_account_sql(username)}'@'{host}'")
+        cur.execute(f"DROP DATABASE IF EXISTS `{_identifier(dbname, 'tenant database name')}`")
+        conn.commit()
+    finally:
+        try:
+            cur.close()
+        except Exception:
+            pass
+        conn.close()
+
+
+def _safe_error(exc):
+    return re.sub(r'(?i)(password|secret|token|api[_-]?key)\s*[:=]\s*[^,; ]+', r'\1=[redacted]', str(exc))
 
 
 def provision_tenant(name, subdomain, address='', dbname=None, use_aws=False):
-    """Programmatic provisioning function. Returns dict with results."""
-    dbname = dbname or f"playschool_tenant_{subdomain}"
+    """Create isolated tenant resources and publish control mapping last."""
+    subdomain = validate_subdomain(subdomain)
+    dbname = _validated_tenant_database_name(subdomain, dbname)
+    username = tenant_database_username(subdomain)
+    grant_host = _account_host()
+    database_created = False
+    user_created = False
+    secret_stored = False
+    control_school_id = None
 
-    # 1) Insert control record
-    tid = insert_control_school(name, address, subdomain)
-    if tid is None:
-        return {'success': False, 'message': 'Control record exists or could not be created.'}
-
-    # 2) Create tenant database
     try:
-        create_database_for(dbname)
-    except Exception as e:
-        return {'success': False, 'message': f'Failed to create tenant database: {e}'}
-
-    # 3) Create tenant DB user
-    tenant_db_user = f"playschool_{subdomain}"
-    tenant_db_password = secrets.token_urlsafe(24)
-    # Determine host constraint for created DB user: prefer localhost when MySQL is local
-    grant_host_env = os.environ.get('TENANT_DB_USER_HOST')
-    if grant_host_env:
-        grant_host = grant_host_env
-    else:
-        grant_host = 'localhost' if MYSQL_HOST in ('localhost', '127.0.0.1') else '%'
-    try:
-        admin_conn = mysql.connector.connect(
-            host=MYSQL_HOST,
-            user=MYSQL_USER,
-            password=MYSQL_PASSWORD,
-            port=MYSQL_PORT
-        )
-        admin_cur = admin_conn.cursor()
+        _admin_config()
+        configured_provider = os.environ.get('TENANT_CREDENTIAL_PROVIDER', '').strip().lower()
+        if use_aws != (configured_provider == 'aws'):
+            raise ProvisioningError('Provisioning credential-provider option does not match server configuration.')
+        ensure_tenant_credential_provider_writable()
+        if get_control_school_by_subdomain(subdomain):
+            raise ProvisioningError('Tenant subdomain already exists.')
         try:
-            admin_cur.execute(f"CREATE USER IF NOT EXISTS '{tenant_db_user}'@'{grant_host}' IDENTIFIED BY %s", (tenant_db_password,))
-        except Exception:
+            get_tenant_db_credentials(subdomain)
+        except CredentialNotFound:
+            pass
+        else:
+            raise ProvisioningError('Orphaned tenant credentials already exist for this subdomain.')
+
+        control_school_id = insert_control_school(name, address, subdomain)
+        database_created = True
+        create_database_for(dbname, connection_config=_admin_config())
+        password = secrets.token_urlsafe(32)
+        user_created = True
+        _create_tenant_user(dbname, username, password, grant_host)
+        create_tables_for_db(dbname, connection_config=_admin_config())
+        store_tenant_db_credentials(subdomain, {
+            'host': MYSQL_HOST, 'port': MYSQL_PORT, 'database': dbname,
+            'username': username, 'password': password,
+        })
+        secret_stored = True
+        activate_control_school(control_school_id, subdomain)
+        return {'success': True, 'message': 'Tenant provisioned', 'tenant_id': control_school_id,
+                'subdomain': subdomain, 'database': dbname, 'tenant_db_user': username,
+                'grant_host': grant_host}
+    except Exception as exc:
+        if control_school_id:
             try:
-                admin_cur.execute(f"CREATE USER '{tenant_db_user}'@'{grant_host}' IDENTIFIED BY %s", (tenant_db_password,))
+                delete_control_school(control_school_id, subdomain)
             except Exception:
                 pass
-        # Grant a minimal set of privileges needed for application operation
-        privs = 'SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, INDEX, ALTER'
-        admin_cur.execute(f"GRANT {privs} ON `{dbname}`.* TO '{tenant_db_user}'@'{grant_host}'")
-        admin_cur.execute("FLUSH PRIVILEGES")
-        admin_conn.commit()
-        admin_cur.close()
-        admin_conn.close()
-    except Exception as e:
-        return {'success': False, 'message': f'Failed to create tenant DB user: {e}'}
-
-    # 4) Create schema
-    try:
-        create_tables_for_db(dbname)
-    except Exception as e:
-        return {'success': False, 'message': f'Failed to create tables in tenant DB: {e}'}
-
-    # 5) Store credentials
-    creds = {
-        'host': MYSQL_HOST,
-        'port': MYSQL_PORT,
-        'database': dbname,
-        'username': tenant_db_user,
-        'password': tenant_db_password
-    }
-    if use_aws:
-        os.environ['USE_AWS_SECRETS'] = '1'
-    try:
-        store_tenant_db_credentials(subdomain, creds)
-    except Exception as e:
-        return {'success': False, 'message': f'Failed to store tenant credentials: {e}'}
-
-    return {'success': True, 'message': 'Tenant provisioned', 'creds': creds, 'tenant_db_user': tenant_db_user, 'grant_host': grant_host}
+        if secret_stored:
+            try:
+                delete_tenant_db_credentials(subdomain)
+            except Exception:
+                pass
+        if database_created or user_created:
+            try:
+                _cleanup_database_and_user(dbname, username, grant_host)
+            except Exception:
+                pass
+        message = _safe_error(exc)
+        audit_log('tenant_provisioning_failed', {
+            'subdomain': subdomain, 'message': message,
+            'cleanup_attempted': bool(database_created or user_created or secret_stored),
+        })
+        return {'success': False, 'subdomain': subdomain, 'message': message}
 
 
 def main():
-    p = argparse.ArgumentParser()
-    p.add_argument('--name', required=True)
-    p.add_argument('--subdomain', required=True)
-    p.add_argument('--address', default='')
-    p.add_argument('--use-aws', action='store_true', help='Store tenant secrets in AWS Secrets Manager (requires AWS creds)')
-    p.add_argument('--db', default=None, help='Optional explicit DB name to create')
-    args = p.parse_args()
-
-    if args.use_aws:
-        os.environ['USE_AWS_SECRETS'] = '1'
-
-    dbname = args.db or f"playschool_tenant_{args.subdomain}"
-    print(f"Provisioning tenant: {args.name} (subdomain={args.subdomain}) -> db={dbname}")
-
-    # 1) Insert control record
-    tid = insert_control_school(args.name, args.address, args.subdomain)
-    if tid is None:
-        print('Aborting: control record exists or could not be created.')
-        return
-    print(f"Inserted control record id={tid}")
-
-    # 2) Create tenant database
-    try:
-        create_database_for(dbname)
-    except Error as e:
-        print(f"Failed to create tenant database: {e}")
-        return
-    # 3) Create a dedicated DB user for the tenant and grant privileges
-    tenant_db_user = f"playschool_{args.subdomain}"
-    tenant_db_password = secrets.token_urlsafe(16)
-    try:
-        admin_conn = mysql.connector.connect(
-            host=MYSQL_HOST,
-            user=MYSQL_USER,
-            password=MYSQL_PASSWORD,
-            port=MYSQL_PORT
-        )
-        admin_cur = admin_conn.cursor()
-        # Create user (if not exists) and grant privileges to the tenant database
-        try:
-            admin_cur.execute(f"CREATE USER IF NOT EXISTS '{tenant_db_user}'@'%' IDENTIFIED BY %s", (tenant_db_password,))
-        except Exception:
-            # fallback for MySQL versions that don't support IF NOT EXISTS in CREATE USER
-            try:
-                admin_cur.execute(f"CREATE USER '{tenant_db_user}'@'%' IDENTIFIED BY %s", (tenant_db_password,))
-            except Exception:
-                pass
-        admin_cur.execute(f"GRANT ALL PRIVILEGES ON `{dbname}`.* TO '{tenant_db_user}'@'%'")
-        admin_cur.execute("FLUSH PRIVILEGES")
-        admin_conn.commit()
-        admin_cur.close()
-        admin_conn.close()
-        print(f"Created tenant DB user: {tenant_db_user}")
-    except Exception as e:
-        print(f"Warning: failed to create tenant DB user: {e}")
-
-    # 4) Create schema in tenant DB (using admin/root connection)
-    try:
-        create_tables_for_db(dbname)
-    except Error as e:
-        print(f"Failed to create tables in tenant DB: {e}")
-        return
-
-    # 5) Store tenant DB credentials (local secrets or AWS Secrets Manager)
-    creds = {
-        'host': MYSQL_HOST,
-        'port': MYSQL_PORT,
-        'database': dbname,
-        'username': tenant_db_user,
-        'password': tenant_db_password
-    }
-    try:
-        store_tenant_db_credentials(args.subdomain, creds)
-        print('Stored tenant DB credentials via secrets manager.')
-    except Exception as e:
-        print(f'Warning: failed to store tenant secrets: {e}')
-
-    print('✅ Tenant provisioned successfully.')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--name', required=True)
+    parser.add_argument('--subdomain', required=True)
+    parser.add_argument('--address', default='')
+    parser.add_argument('--use-aws', action='store_true')
+    parser.add_argument('--db', default=None)
+    args = parser.parse_args()
+    result = provision_tenant(args.name, args.subdomain, args.address, args.db, args.use_aws)
+    print(result)
+    if not result.get('success'):
+        raise SystemExit(1)
 
 
 if __name__ == '__main__':

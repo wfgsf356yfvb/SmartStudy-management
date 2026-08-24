@@ -14,7 +14,27 @@
 
 ## Current phase
 
-- Phase 3 frozen as the stable release-candidate baseline; local verification complete and production verification pending
+- Phase 3 = FROZEN
+- Phase 4 = IN PROGRESS; production verification pending
+- Phase 5 = production verification pending
+- Phase 6 = NOT STARTED
+
+## Current release-candidate verification snapshot
+
+The following is the authoritative current local status. Older phase sections
+below are retained as an audit trail and may contain historical test counts.
+
+- Full unittest discovery: **88 passed, 10 environment-gated skips, 0 failures**.
+- Local disposable tenant provisioning: **PASS**.
+- Separate `TENANT_GRANT_MYSQL_*` grant-account architecture: **PASS locally**.
+- Temporary provisioning diagnostic: **reverted**.
+- Disposable tenant resources and credentials: **cleaned up**.
+- Production deployment: **NOT YET COMPLETED**.
+- Staging deployment: **NOT YET DEPLOYED**.
+- Phase 4 production verification: **PENDING**.
+- Phase 5 production verification: **PENDING**.
+- Real S3, ClamAV, HTTPS, Razorpay, SMTP, and off-host backup verification:
+  **PENDING where applicable**.
 
 ## Completed
 
@@ -332,3 +352,25 @@
 - Migration rollback and production failure recovery: **BLOCKED — requires disposable production-like MySQL and backup evidence**.
 - HTTPS, receipts, tenant isolation, and production deployment verification: **BLOCKED — requires real staging/production services**.
 - Phase 5 is not complete. Phase 6 has **NOT STARTED**.
+
+### Final pre-deployment blocker fixes — local verification
+
+- Hardened the tenant request boundary so authenticated school users cannot use
+  the control host as an unscoped database path.
+- Restricted public registration to a resolved tenant and approved roles;
+  browser-provided school IDs are ignored.
+- Added a validated private-subnet tenant MySQL account-host requirement and
+  removed request-controlled credential-provider mutation.
+- Added ownership-aware provisioning reservation/activation cleanup for
+  concurrent duplicate requests and active-state job-context validation.
+- Added secure OTP generation, expiry/attempt limits, session revalidation,
+  attendance ownership fixes, audit error redaction, paginated S3 quota usage,
+  restrictive migrated-file permissions, bounded Compose logs, and the Phase 4
+  scheduler/backup maintenance path.
+- Corrected the admin fee-payment endpoint reference and hardened `.env.example`
+  to contain placeholders only.
+- These changes are locally tested only; no EC2, DNS, HTTPS, Razorpay, or
+  production infrastructure was modified.
+- Final local regression after these fixes: 76 tests passed, 10
+  environment-gated skips, 0 failures; compilation and `git diff --check`
+  passed.
