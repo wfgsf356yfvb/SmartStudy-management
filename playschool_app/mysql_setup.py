@@ -24,7 +24,7 @@ load_dotenv()
 MYSQL_HOST = "localhost"
 MYSQL_USER = os.environ.get("MYSQL_USER", "")
 MYSQL_PASSWORD = os.environ.get("MYSQL_PASSWORD", "")
-MYSQL_DB = "playschool_db"
+MYSQL_DB = os.environ.get("MYSQL_DB", "playschool_db")
 MYSQL_PORT = 3306
 
 
