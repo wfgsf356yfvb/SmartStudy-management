@@ -27,6 +27,7 @@ from scripts.audit import log as audit_log
 MYSQL_HOST = os.environ.get('MYSQL_HOST', 'localhost')
 CONTROL_DB = os.environ.get('MYSQL_DB', 'playschool_db')
 MYSQL_PORT = int(os.environ.get('MYSQL_PORT', 3306))
+MYSQL_USER_MAX_LENGTH = 32
 
 
 class ProvisioningError(RuntimeError):
@@ -78,10 +79,13 @@ def tenant_database_name(subdomain):
 
 def tenant_database_username(subdomain):
     subdomain = validate_subdomain(subdomain)
-    return _identifier(
+    username = _identifier(
         f'playschool_{_normalized_subdomain_identifier(subdomain)}',
         'tenant database user',
     )
+    if len(username) > MYSQL_USER_MAX_LENGTH:
+        raise ProvisioningError('Tenant subdomain produces a MySQL username that is too long.')
+    return username
 
 
 def _validated_tenant_database_name(subdomain, dbname=None):
