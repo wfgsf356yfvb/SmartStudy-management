@@ -16,7 +16,12 @@
 
   --bg:          #f8fafc;
   --bg-light:    #ffffff;
-  --sidebar-bg:  #0f172a;
+  --sidebar-bg:  #ffffff;
+  --sidebar-text: #334155;
+  --sidebar-muted: #64748b;
+  --sidebar-hover: #f1f5f9;
+  --sidebar-surface: rgba(15,23,42,0.05);
+  --sidebar-border: #e2e8f0;
   --sidebar-w:   260px;
   --card-bg:     #FFFFFF;
   --border:      #e2e8f0;
@@ -39,6 +44,11 @@
   --bg:          #121212;
   --bg-light:    #1E1E1E;
   --sidebar-bg:  #0D0D0D;
+  --sidebar-text: #F3F4F6;
+  --sidebar-muted: rgba(255,255,255,0.7);
+  --sidebar-hover: rgba(255,255,255,0.1);
+  --sidebar-surface: rgba(255,255,255,0.05);
+  --sidebar-border: rgba(255,255,255,0.08);
   --card-bg:     #1E1E1E;
   --border:      #333333;
   --text:        #F3F4F6;
@@ -97,16 +107,16 @@ img { max-width: 100%; }
 .sidebar-brand {
   display: flex; align-items: center; gap: 12px;
   padding: 24px 20px 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  border-bottom: 1px solid var(--sidebar-border);
 }
 .brand-icon { font-size: 36px; }
-.brand-name { font-family: 'Baloo 2', cursive; font-size: 20px; font-weight: 800; color: #fff; }
+.brand-name { font-family: 'Baloo 2', cursive; font-size: 20px; font-weight: 800; color: var(--sidebar-text); }
 .brand-sub  { font-size: 11px; color: var(--purple-l); letter-spacing: .5px; }
 
 .sidebar-user {
   display: flex; align-items: center; gap: 12px;
   padding: 16px 20px;
-  background: rgba(255,255,255,0.05);
+  background: var(--sidebar-surface);
   margin: 12px; border-radius: var(--radius-sm);
 }
 .user-avatar {
@@ -116,7 +126,7 @@ img { max-width: 100%; }
   font-size: 18px; font-weight: 800; color: #fff;
   flex-shrink: 0;
 }
-.user-name  { font-weight: 700; color: #fff; font-size: 14px; }
+.user-name  { font-weight: 700; color: var(--sidebar-text); font-size: 14px; }
 .user-badge {
   font-size: 11px; padding: 2px 8px; border-radius: 20px;
   display: inline-block; margin-top: 2px; font-weight: 600;
@@ -129,19 +139,19 @@ img { max-width: 100%; }
 .nav-item {
   display: flex; align-items: center; gap: 12px;
   padding: 12px 14px; border-radius: var(--radius-sm);
-  color: rgba(255,255,255,0.7); font-weight: 600;
+  color: var(--sidebar-muted); font-weight: 600;
   margin-bottom: 4px; transition: all .2s;
   text-decoration: none;
 }
-.nav-item:hover { background: rgba(255,255,255,0.1); color: #fff; text-decoration: none; }
+.nav-item:hover { background: var(--sidebar-hover); color: var(--sidebar-text); text-decoration: none; }
 .nav-item.active { background: var(--primary); color: #fff; }
 .nav-icon { font-size: 18px; width: 24px; text-align: center; }
 
 .sidebar-logout {
   display: flex; align-items: center; gap: 10px;
-  padding: 16px 26px; color: rgba(255,255,255,0.5);
+  padding: 16px 26px; color: var(--sidebar-muted);
   font-weight: 600; transition: color .2s; text-decoration: none;
-  border-top: 1px solid rgba(255,255,255,0.08);
+  border-top: 1px solid var(--sidebar-border);
 }
 .sidebar-logout:hover { color: var(--red); text-decoration: none; }
 
@@ -154,15 +164,23 @@ img { max-width: 100%; }
   align-items: center; padding: 0 16px;
   gap: 12px; z-index: 99;
 }
+.sidebar-toggles-box {
+  background: var(--sidebar-surface) !important;
+  border-color: var(--sidebar-border) !important;
+}
+.sidebar-toggles-box button {
+  color: var(--sidebar-text) !important;
+  background: var(--sidebar-hover) !important;
+}
 .menu-toggle {
-  background: none; border: none; color: #fff;
+  background: none; border: none; color: var(--sidebar-text);
   font-size: 22px; cursor: pointer; padding: 4px;
 }
 .topbar-brand {
   font-family: 'Baloo 2', cursive; font-size: 18px;
-  font-weight: 800; color: #fff; flex: 1;
+  font-weight: 800; color: var(--sidebar-text); flex: 1;
 }
-.topbar-user { color: rgba(255,255,255,0.6); font-size: 13px; }
+.topbar-user { color: var(--sidebar-muted); font-size: 13px; }
 
 /* ============================================
    MAIN CONTENT
