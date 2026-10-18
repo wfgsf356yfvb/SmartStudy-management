@@ -13,7 +13,6 @@
             <div class="form-group">
                 <label>Assigned School</label>
                 <select name="school_id" required style="width:100%; padding:10px; border-radius:8px;">
-                    <option value="">-- Unassigned --</option>
                     {% for s in schools %}
                     <option value="{{ s.id }}" {% if s.id == admin.school_id %}selected{% endif %}>{{ s.name }}</option>
                     {% endfor %}

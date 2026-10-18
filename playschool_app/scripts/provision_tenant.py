@@ -116,6 +116,13 @@ def _account_sql(value):
     return value.replace('`', '``').replace("'", "''")
 
 
+def _grant_database_sql(value):
+    # Database-level GRANT treats _ and % as wildcards.
+    # Escape them so the tenant database name is matched literally.
+    value = _identifier(value, 'tenant database name')
+    return value.replace('\\', '\\\\').replace('_', '\\_').replace('%', '\\%')
+
+
 def get_control_school_by_subdomain(subdomain):
     subdomain = validate_subdomain(subdomain)
     conn = mysql.connector.connect(**_admin_config(CONTROL_DB))
@@ -202,20 +209,26 @@ def _create_tenant_user(dbname, username, password, grant_host):
     host = _account_sql(grant_host)
     admin_conn = mysql.connector.connect(**_admin_config())
     grant_conn = None
+    admin_cur = None
+    grant_cur = None
+    user_created = False
     try:
         admin_cur = admin_conn.cursor()
         admin_cur.execute(
             f"CREATE USER IF NOT EXISTS '{_account_sql(username)}'@'{host}' IDENTIFIED BY %s",
             (password,),
         )
+        admin_conn.commit()
+        user_created = True
+
         grant_conn = mysql.connector.connect(**_grant_config())
         grant_cur = grant_conn.cursor()
+        grant_dbname = _grant_database_sql(dbname)
         grant_cur.execute(
             f"GRANT SELECT, INSERT, UPDATE, DELETE "
-            f"ON `{dbname}`.* TO '{_account_sql(username)}'@'{host}'"
+            f"ON `{grant_dbname}`.* TO '{_account_sql(username)}'@'{host}'"
         )
         grant_conn.commit()
-        admin_conn.commit()
     except Exception as exc:
         try:
             admin_conn.rollback()
@@ -226,16 +239,33 @@ def _create_tenant_user(dbname, username, password, grant_host):
                 grant_conn.rollback()
             except Exception:
                 pass
+
+        if user_created:
+            try:
+                cleanup_cur = admin_conn.cursor()
+                cleanup_cur.execute(
+                    f"DROP USER IF EXISTS '{_account_sql(username)}'@'{host}'"
+                )
+                admin_conn.commit()
+                cleanup_cur.close()
+            except Exception:
+                try:
+                    admin_conn.rollback()
+                except Exception:
+                    pass
+
         raise ProvisioningError(
             'Tenant database account could not be created.'
         ) from exc
     finally:
         try:
-            admin_cur.close()
+            if admin_cur is not None:
+                admin_cur.close()
         except Exception:
             pass
         try:
-            grant_cur.close()
+            if grant_cur is not None:
+                grant_cur.close()
         except Exception:
             pass
         admin_conn.close()
