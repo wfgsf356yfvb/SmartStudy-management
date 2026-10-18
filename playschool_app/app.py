@@ -319,7 +319,14 @@ def set_security_headers(response):
     response.headers['Permissions-Policy'] = 'geolocation=()'
     response.headers['X-XSS-Protection'] = '1; mode=block'
     # Minimal CSP - adjust as needed for your app assets
-    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:;"
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https:; "
+        "style-src 'self' 'unsafe-inline' https:; "
+        "img-src 'self' data: https:; "
+        "connect-src 'self' https://translate.google.com https://translate.googleapis.com; "
+        "frame-src https://translate.google.com https://translate.googleapis.com;"
+    )
     return response
 
 def current_school():
