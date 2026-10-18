@@ -79,8 +79,11 @@ def run_configured_file_maintenance():
         references = json.loads(raw)
     except (TypeError, ValueError) as exc:
         raise RuntimeError('FILE_MAINTENANCE_TENANTS_JSON is invalid.') from exc
-    if not isinstance(references, list) or not references:
-        raise RuntimeError('FILE_MAINTENANCE_TENANTS_JSON must contain tenant references.')
+    if not isinstance(references, list):
+        raise RuntimeError('FILE_MAINTENANCE_TENANTS_JSON must be a JSON list.')
+
+    if not references:
+        return {'enqueued': []}
     jobs = []
     for reference in references:
         if not isinstance(reference, dict) or not reference.get('job_id') or not reference.get('subdomain'):

@@ -96,9 +96,9 @@
                 class="nav-item {% if request.endpoint=='admin_announcement' %}active{% endif %}">
                 <span class="nav-icon">ðŸ“¢</span> <span data-i18n="Announcements">Announcements</span>
             </a>
-            <a href="{{ url_for('admin_teacher_attendance') }}"
-                class="nav-item {% if request.endpoint=='admin_teacher_attendance' %}active{% endif %}">
-                <span class="nav-icon">ðŸ¤</span> <span data-i18n="Teacher Attendance">Staff Attendance</span>
+            <a href="{{ url_for('admin_student_attendance') }}"
+                class="nav-item {% if request.endpoint=='admin_student_attendance' %}active{% endif %}">
+                <span class="nav-icon">ðŸ¤</span> <span data-i18n="Student Attendance">Student Attendance</span>
             </a>
             <a href="{{ url_for('admin_fee_payments') }}"
                 class="nav-item {% if request.endpoint=='admin_fee_payments' %}active{% endif %}">

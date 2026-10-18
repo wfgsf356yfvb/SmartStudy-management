@@ -12,9 +12,37 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 
+
+import boto3
+
 from tenant_services.file_storage import is_private_storage_key
 from tenant_services.middleware.tenant_resolver import validate_subdomain
 
+def _backup_s3_client():
+    """Return an S3 client using the dedicated off-host backup role."""
+    role_arn = os.environ.get('UPLOAD_BACKUP_ROLE_ARN', '').strip()
+    if not role_arn:
+        raise RuntimeError('UPLOAD_BACKUP_ROLE_ARN is required for off-host upload backups.')
+
+    sts = boto3.client('sts')
+    response = sts.assume_role(
+        RoleArn=role_arn,
+        RoleSessionName='smartstudy-upload-backup',
+    )
+
+    credentials = response.get('Credentials') or {}
+    if not all(
+        credentials.get(key)
+        for key in ('AccessKeyId', 'SecretAccessKey', 'SessionToken')
+    ):
+        raise RuntimeError('Backup role did not return usable temporary credentials.')
+
+    return boto3.client(
+        's3',
+        aws_access_key_id=credentials['AccessKeyId'],
+        aws_secret_access_key=credentials['SecretAccessKey'],
+        aws_session_token=credentials['SessionToken'],
+    )
 
 def backup_private_uploads_to_s3(tenant_subdomain, bucket, root=None, prefix='private-uploads'):
     """Create a checksum manifest archive and upload it to protected S3."""
@@ -40,7 +68,7 @@ def backup_private_uploads_to_s3(tenant_subdomain, bucket, root=None, prefix='pr
         else:
             raise ValueError('Unsupported upload backup storage provider.')
         key = f'{prefix.rstrip("/")}/tenant/{tenant}/{datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")}.zip'
-        boto3.client('s3').upload_file(
+        _backup_s3_client().upload_file(
             str(temporary), bucket, key,
             ExtraArgs={'ServerSideEncryption': 'AES256'},
         )

@@ -206,9 +206,38 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 def current_user():
-    if 'user_id' in session:
-        return query_db("SELECT * FROM users WHERE id=%s", (session['user_id'],), one=True)
-    return None
+    if 'user_id' not in session:
+        return None
+
+    user_id = session['user_id']
+    role = session.get('role')
+
+    # Super-admins and school admins are stored centrally.
+    if role == 'super_admin':
+        return query_db(
+            "SELECT * FROM users WHERE id=%s AND role='super_admin'",
+            (user_id,),
+            one=True,
+            use_control=True,
+        )
+
+    if role == 'admin':
+        sid = session.get('school_id')
+        if sid is None:
+            return None
+        return query_db(
+            "SELECT * FROM users WHERE id=%s AND role='admin' AND school_id=%s",
+            (user_id, sid),
+            one=True,
+            use_control=True,
+        )
+
+    # Teachers/students are tenant-local accounts.
+    return query_db(
+        "SELECT * FROM users WHERE id=%s AND school_id=%s",
+        (user_id, session.get('school_id')),
+        one=True,
+    )
 
 
 def storage_tenant():
@@ -298,6 +327,23 @@ def current_school():
     if sid:
         return query_db("SELECT * FROM schools WHERE id=%s", (sid,), one=True, use_control=True)
     return None
+
+def provisioned_school_for_assignment(school_id):
+    """Return an active tenant mapping suitable for a school-admin assignment."""
+    try:
+        school_id = int(school_id)
+    except (TypeError, ValueError):
+        return None
+
+    return query_db(
+        "SELECT id, name, subdomain, subscription_status, valid_until "
+        "FROM schools "
+        "WHERE id=%s AND subdomain IS NOT NULL AND subdomain<>'' "
+        "AND subscription_status='active'",
+        (school_id,),
+        one=True,
+        use_control=True,
+    )
 
 def get_week_number():
     return datetime.date.today().isocalendar()[1]
@@ -409,11 +455,13 @@ def resolve_tenant_middleware():
                 session.clear()
                 return ('Tenant session is not valid for this host.', 403)
             session['tenant_subdomain'] = sch['subdomain']
-        # prefer explicit session school if already set for authenticated user
-        if session.get('role') != 'super_admin':
+        # Never let the request hostname overwrite an authenticated user's school.
+        # The authenticated session must remain bound to the tenant selected at login.
+        if session.get('role') != 'super_admin' and session.get('user_id') is not None:
             session_school = session.get('school_id')
-            if session_school != sch['id']:
-                session['school_id'] = sch['id']
+            if session_school is not None and session_school != sch['id']:
+                session.clear()
+                return ('Tenant session is not valid for this host.', 403)
     else:
         if session.get('tenant_subdomain') and session.get('role') != 'super_admin':
             session.clear()
@@ -469,7 +517,29 @@ def login():
     if request.method == 'POST':
         email    = request.form['email'].strip()
         password = request.form['password']
-        user = query_db("SELECT * FROM users WHERE email=%s AND is_active=1", (email,), one=True)
+        if g.tenant:
+            # School admins are centrally managed; teacher/student accounts are tenant-local.
+            admin_user = query_db(
+                "SELECT * FROM users "
+                "WHERE email=%s AND is_active=1 AND role='admin' AND school_id=%s",
+                (email, g.tenant['id']),
+                one=True,
+                use_control=True,
+            )
+
+            user = admin_user or query_db(
+                "SELECT * FROM users "
+                "WHERE email=%s AND is_active=1 AND school_id=%s",
+                (email, g.tenant['id']),
+                one=True,
+            )
+        else:
+            user = query_db(
+                "SELECT * FROM users WHERE email=%s AND is_active=1 AND role='super_admin'",
+                (email,),
+                one=True,
+                use_control=True,
+            )
         if user and check_password_hash(user['password_hash'], password):
             if _otp_rate_limited():
                 flash('Please wait before requesting another verification code.', 'warning')
@@ -1902,7 +1972,7 @@ def my_attendance_view():
 
 @app.route('/admin/attendance', methods=['GET', 'POST'])
 @role_required('admin')
-def admin_teacher_attendance():
+def admin_student_attendance():
     today = datetime.date.today().strftime('%Y-%m-%d')
     selected_date = request.args.get('date', today)
     
@@ -1932,10 +2002,10 @@ def admin_teacher_attendance():
                     status=VALUES(status), remark=VALUES(remark), teacher_id=VALUES(teacher_id)
                 """, (student_id, admin_id, mark_date, status, remark), commit=True)
         
-        flash('Teacher attendance recorded successfully!', 'success')
-        return redirect(url_for('admin_teacher_attendance', date=mark_date))
+        flash('Student attendance recorded successfully!', 'success')
+        return redirect(url_for('admin_student_attendance', date=mark_date))
 
-    teachers = query_db("SELECT * FROM users WHERE role='student' AND school_id=%s ORDER BY name", (session.get('school_id'),))
+    students = query_db("SELECT * FROM users WHERE role='student' AND school_id=%s ORDER BY name", (session.get('school_id'),))
     records  = query_db(
         "SELECT a.* FROM attendance a JOIN users u ON a.student_id=u.id "
         "WHERE a.date=%s AND u.school_id=%s",
@@ -1944,7 +2014,7 @@ def admin_teacher_attendance():
     rec_map  = {r['student_id']: r for r in records}
     
     return render_template('admin/teacher_attendance.html', 
-                           teachers=teachers, rec_map=rec_map, 
+                           students=students, rec_map=rec_map,
                            selected_date=selected_date)
 
 # Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
@@ -1963,29 +2033,24 @@ def super_admin_dashboard():
     
     return render_template('super_admin/dashboard.html', stats=stats, recent_schools=recent_schools)
 
-@app.route('/super-admin/schools', methods=['GET', 'POST'])
+@app.route('/super-admin/schools')
 @role_required('super_admin')
 def super_admin_schools():
-    if request.method == 'POST':
-        name = request.form.get('name', '').strip()
-        addr = request.form.get('address', '').strip()
-        if name:
-            query_db("INSERT INTO schools (name, address) VALUES (%s, %s)", (name, addr), commit=True, use_control=True)
-            flash(f'School "{name}" created successfully! Ã°Å¸ÂÂ«', 'success')
-        else:
-            flash('School name is required.', 'danger')
-        return redirect(url_for('super_admin_schools'))
-
-    schools = query_db("""
-        SELECT s.*, 
-               (SELECT COUNT(*) FROM users WHERE school_id=s.id AND role='student') as student_count,
-               (SELECT COUNT(*) FROM users WHERE school_id=s.id AND role='teacher') as teacher_count,
-               (SELECT name FROM users WHERE school_id=s.id AND role='admin' LIMIT 1) as admin_name
+    schools = query_db(
+        """
+        SELECT s.*,
+               (SELECT COUNT(*) FROM users
+                WHERE school_id=s.id AND role='student') AS student_count,
+               (SELECT COUNT(*) FROM users
+                WHERE school_id=s.id AND role='teacher') AS teacher_count,
+               (SELECT name FROM users
+                WHERE school_id=s.id AND role='admin' LIMIT 1) AS admin_name
         FROM schools s
         ORDER BY s.created_at DESC
-    """, use_control=True)
+        """,
+        use_control=True,
+    )
     return render_template('super_admin/schools.html', schools=schools)
-
 
 @app.route('/super-admin/provision', methods=['GET'])
 @role_required('super_admin')
@@ -2066,22 +2131,44 @@ def super_admin_provision_retry(job_id):
 @role_required('super_admin')
 def super_admin_create_admin():
     if request.method == 'POST':
-        name = request.form.get('name')
-        email = request.form.get('email')
-        phone = request.form.get('phone')
-        passw = request.form.get('password')
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip()
+        phone = request.form.get('phone', '').strip()
+        passw = request.form.get('password', '')
         school_id = request.form.get('school_id')
-        
+
+        school = provisioned_school_for_assignment(school_id)
+        if not school:
+            flash('Select an active, provisioned tenant school.', 'danger')
+            return redirect(url_for('super_admin_create_admin'))
+
+        if not passw:
+            flash('Admin password is required.', 'danger')
+            return redirect(url_for('super_admin_create_admin'))
+
         pw_hash = generate_password_hash(passw)
         try:
-            query_db("INSERT INTO users (name, email, phone, password_hash, role, school_id) VALUES (%s,%s,%s,%s,'admin',%s)",
-                    (name, email, phone, pw_hash, school_id), commit=True, use_control=True)
-            flash(f"Admin created successfully for the school! Ã¢Å“Â¨", "success")
+            query_db(
+                "INSERT INTO users "
+                "(name, email, phone, password_hash, role, school_id) "
+                "VALUES (%s,%s,%s,%s,'admin',%s)",
+                (name, email, phone, pw_hash, school['id']),
+                commit=True,
+                use_control=True,
+            )
+            flash('Admin created successfully for the school!', 'success')
         except Exception as e:
-            flash(f"Error creating admin: {e}", "danger")
+            flash(f'Error creating admin: {e}', 'danger')
+
         return redirect(url_for('super_admin_dashboard'))
-    
-    schools = query_db("SELECT * FROM schools", use_control=True)
+
+    schools = query_db(
+        "SELECT * FROM schools "
+        "WHERE subdomain IS NOT NULL AND subdomain<>'' "
+        "AND subscription_status='active' "
+        "ORDER BY created_at DESC",
+        use_control=True,
+    )
     return render_template('super_admin/create_admin.html', schools=schools)
 
 @app.route('/super-admin/admins')
@@ -2098,31 +2185,63 @@ def super_admin_admins():
 @app.route('/super-admin/admins/edit/<int:admin_id>', methods=['GET', 'POST'])
 @role_required('super_admin')
 def super_admin_edit_admin(admin_id):
-    admin = query_db("SELECT * FROM users WHERE id=%s AND role='admin'", (admin_id,), one=True, use_control=True)
+    admin = query_db(
+        "SELECT * FROM users WHERE id=%s AND role='admin'",
+        (admin_id,),
+        one=True,
+        use_control=True,
+    )
     if not admin:
         flash('Admin not found!', 'danger')
         return redirect(url_for('super_admin_admins'))
-        
+
     if request.method == 'POST':
-        name      = request.form.get('name')
-        email     = request.form.get('email')
-        phone     = request.form.get('phone')
-        passw     = request.form.get('password', '').strip()
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip()
+        phone = request.form.get('phone', '').strip()
+        passw = request.form.get('password', '').strip()
         school_id = request.form.get('school_id')
-        
+
+        school = provisioned_school_for_assignment(school_id)
+        if not school:
+            flash('Select an active, provisioned tenant school.', 'danger')
+            return redirect(
+                url_for('super_admin_edit_admin', admin_id=admin_id)
+            )
+
         if passw:
             pw_hash = generate_password_hash(passw)
-            query_db("UPDATE users SET name=%s, email=%s, phone=%s, password_hash=%s, school_id=%s WHERE id=%s",
-                     (name, email, phone, pw_hash, school_id, admin_id), commit=True, use_control=True)
+            query_db(
+                "UPDATE users SET name=%s, email=%s, phone=%s, "
+                "password_hash=%s, school_id=%s WHERE id=%s",
+                (name, email, phone, pw_hash, school['id'], admin_id),
+                commit=True,
+                use_control=True,
+            )
         else:
-            query_db("UPDATE users SET name=%s, email=%s, phone=%s, school_id=%s WHERE id=%s",
-                     (name, email, phone, school_id, admin_id), commit=True, use_control=True)
-                     
-        flash("School Admin profile updated successfully!", "success")
+            query_db(
+                "UPDATE users SET name=%s, email=%s, phone=%s, school_id=%s "
+                "WHERE id=%s",
+                (name, email, phone, school['id'], admin_id),
+                commit=True,
+                use_control=True,
+            )
+
+        flash('School Admin profile updated successfully!', 'success')
         return redirect(url_for('super_admin_admins'))
-        
-    schools = query_db("SELECT * FROM schools", use_control=True)
-    return render_template('super_admin/edit_admin.html', admin=admin, schools=schools)
+
+    schools = query_db(
+        "SELECT * FROM schools "
+        "WHERE subdomain IS NOT NULL AND subdomain<>'' "
+        "AND subscription_status='active' "
+        "ORDER BY created_at DESC",
+        use_control=True,
+    )
+    return render_template(
+        'super_admin/edit_admin.html',
+        admin=admin,
+        schools=schools,
+    )
 
 @app.route('/super-admin/admins/delete/<int:admin_id>', methods=['POST'])
 @role_required('super_admin')
