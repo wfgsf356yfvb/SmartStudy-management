@@ -271,14 +271,15 @@ def provision_tenant(name, subdomain, address='', dbname=None, use_aws=False):
     """Create isolated tenant resources and publish control mapping last."""
     subdomain = validate_subdomain(subdomain)
     dbname = _validated_tenant_database_name(subdomain, dbname)
-    username = tenant_database_username(subdomain)
     grant_host = _account_host()
     database_created = False
     user_created = False
     secret_stored = False
     control_school_id = None
+    username = None
 
     try:
+        username = tenant_database_username(subdomain)
         _admin_config()
         configured_provider = os.environ.get('TENANT_CREDENTIAL_PROVIDER', '').strip().lower()
         if use_aws != (configured_provider == 'aws'):
