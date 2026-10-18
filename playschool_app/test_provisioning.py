@@ -173,14 +173,23 @@ class ProvisioningSafetyTests(unittest.TestCase):
     def test_overlong_generated_mysql_username_is_rejected_before_provisioning(self):
         from scripts import provision_tenant as module
         subdomain = 'a' * 23
-        with patch.object(module, 'insert_control_school') as insert_control, \
+        with patch.dict(os.environ, {'TENANT_DB_USER_HOST': 'localhost'}, clear=False), \
+             patch.object(module, 'insert_control_school') as insert_control, \
              patch.object(module, 'create_database_for') as create_database, \
              patch.object(module, '_create_tenant_user') as create_user:
-            with self.assertRaisesRegex(ProvisioningError, 'MySQL username that is too long'):
-                module.provision_tenant('Local', subdomain)
+            result = module.provision_tenant('Local', subdomain)
+        self.assertFalse(result['success'])
+        self.assertIn('MySQL username that is too long', result['message'])
         insert_control.assert_not_called()
         create_database.assert_not_called()
         create_user.assert_not_called()
+
+    def test_overlong_username_returns_sanitized_provisioning_failure(self):
+        from scripts import provision_tenant as module
+        with patch.dict(os.environ, {'TENANT_DB_USER_HOST': 'localhost'}, clear=False):
+            result = module.provision_tenant('Local', 'a' * 23)
+        self.assertFalse(result['success'])
+        self.assertEqual(result['message'], 'Tenant subdomain produces a MySQL username that is too long.')
 
     def test_omitted_db_uses_canonical_name(self):
         self.assertEqual(

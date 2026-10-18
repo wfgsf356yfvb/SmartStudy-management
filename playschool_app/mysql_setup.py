@@ -94,17 +94,18 @@ def create_database_for(db_name, connection_config=None):
 # CREATE TABLES
 # ============================================================
 
-def create_tables():
-    """Create all tables."""
+def create_tables(connection_config=None, db_name=None):
+    """Create all tables in the configured database."""
 
     try:
-        conn = mysql.connector.connect(
-            host=MYSQL_HOST,
-            user=MYSQL_USER,
-            password=MYSQL_PASSWORD,
-            database=MYSQL_DB,
-            port=MYSQL_PORT
-        )
+        config = connection_config or {
+            'host': MYSQL_HOST, 'user': MYSQL_USER,
+            'password': MYSQL_PASSWORD, 'database': MYSQL_DB,
+            'port': MYSQL_PORT,
+        }
+        config = dict(config)
+        config['database'] = db_name or config.get('database') or MYSQL_DB
+        conn = mysql.connector.connect(**config)
 
         cursor = conn.cursor()
 
@@ -511,47 +512,7 @@ def seed_data():
 
 def create_tables_for_db(db_name, connection_config=None):
     """Create all tables in the specified database."""
-    try:
-        config = connection_config or {
-            'host': MYSQL_HOST, 'user': MYSQL_USER,
-            'password': MYSQL_PASSWORD, 'database': db_name,
-            'port': MYSQL_PORT,
-        }
-        config = dict(config)
-        config['database'] = db_name
-        conn = mysql.connector.connect(**config)
-
-        cursor = conn.cursor()
-
-        # ----------------------------------------------------
-        # Schools Table
-        # ----------------------------------------------------
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS schools (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                name VARCHAR(255) NOT NULL,
-                address VARCHAR(255),
-                subdomain VARCHAR(100) UNIQUE,
-                subscription_status VARCHAR(20) DEFAULT 'active',
-                valid_until DATE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-        """)
-
-        print("  ✅ schools table")
-        # Account and tenant provisioning are controlled workflows. This
-        # schema helper must never create default or demo credentials.
-        conn.commit()
-
-        cursor.close()
-        conn.close()
-
-        print("\n✅ Schema created; no default accounts were seeded.")
-
-    except Error as e:
-        print(f"❌ Error seeding data: {e}")
-        raise
+    return create_tables(connection_config=connection_config, db_name=db_name)
 
 
 # ============================================================
