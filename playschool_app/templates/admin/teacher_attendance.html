@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Teacher Attendance{% endblock %}
+{% block title %}Student Attendance{% endblock %}
 {% block content %}
 <div class="page-header" data-aos="fade-down">
     <div>
@@ -17,7 +17,7 @@
     </form>
 </div>
 
-<form method="POST" action="{{ url_for('admin_teacher_attendance') }}" data-aos="fade-up" data-aos-delay="100">
+<form method="POST" action="{{ url_for('admin_student_attendance') }}" data-aos="fade-up" data-aos-delay="100">
     <input type="hidden" name="mark_date" value="{{ selected_date }}">
     
     <div class="card" style="border-top: 4px solid var(--purple);">
@@ -35,29 +35,29 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for t in teachers %}
-                    {% set r = rec_map.get(t.id) %}
+                    {% for student in students %}
+                    {% set r = rec_map.get(student.id) %}
                     <tr>
-                        <td style="font-weight:700; color: var(--dark-shade);">{{ t.name }}</td>
-                        <td style="color: var(--light-text); font-size: 13px;">{{ t.email }}</td>
+                        <td style="font-weight:700; color: var(--dark-shade);">{{ student.name }}</td>
+                        <td style="color: var(--light-text); font-size: 13px;">{{ student.email }}</td>
                         <td>
                             <div style="display: flex; gap: 6px;">
                                 <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; background: #f0fdf4; padding: 6px 10px; border-radius: 8px; border: 1px solid #bbf7d0;">
-                                    <input type="radio" name="status_{{ t.id }}" value="present" {% if not r or r.status == 'present' %}checked{% endif %}> 
+                                    <input type="radio" name="status_{{ student.id }}" value="present" {% if not r or r.status == 'present' %}checked{% endif %}>
                                     <span style="font-size: 13px; color: #166534; font-weight:600;">P</span>
                                 </label>
                                 <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; background: #fef2f2; padding: 6px 10px; border-radius: 8px; border: 1px solid #fecaca;">
-                                    <input type="radio" name="status_{{ t.id }}" value="absent" {% if r and r.status == 'absent' %}checked{% endif %}> 
+                                    <input type="radio" name="status_{{ student.id }}" value="absent" {% if r and r.status == 'absent' %}checked{% endif %}>
                                     <span style="font-size: 13px; color: #991b1b; font-weight:600;">A</span>
                                 </label>
                                 <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; background: #fffbeb; padding: 6px 10px; border-radius: 8px; border: 1px solid #fef08a;">
-                                    <input type="radio" name="status_{{ t.id }}" value="late" {% if r and r.status == 'late' %}checked{% endif %}> 
+                                    <input type="radio" name="status_{{ student.id }}" value="late" {% if r and r.status == 'late' %}checked{% endif %}>
                                     <span style="font-size: 13px; color: #854d0e; font-weight:600;">L</span>
                                 </label>
                             </div>
                         </td>
                         <td>
-                            <input type="text" name="remark_{{ t.id }}" placeholder="Note..." value="{{ r.remark if r else '' }}" style="padding: 8px; font-size: 13px;">
+                            <input type="text" name="remark_{{ student.id }}" placeholder="Note..." value="{{ r.remark if r else '' }}" style="padding: 8px; font-size: 13px;">
                         </td>
                     </tr>
                     {% else %}
@@ -68,7 +68,7 @@
         </div>
     </div>
 
-    {% if teachers %}
+    {% if students %}
     <div style="text-align: right; margin-top: 15px;">
         <button type="submit" class="btn-primary" style="background: var(--purple); padding: 14px 40px; font-weight:700; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(124, 58, 237, 0.3);">📋 Submit Official Records</button>
     </div>

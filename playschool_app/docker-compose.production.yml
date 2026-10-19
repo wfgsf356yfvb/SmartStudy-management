@@ -12,6 +12,8 @@ services:
       MYSQL_DATABASE: "${MYSQL_DB:?MYSQL_DB is required}"
       MYSQL_USER: "${MYSQL_USER:?MYSQL_USER is required}"
       MYSQL_PASSWORD: "${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}"
+      TENANT_CREDENTIAL_PROVIDER: protected_file
+      TENANT_DB_CREDENTIALS_FILE: /var/lib/smartstudy/tenant-credentials/tenant_credentials.json
     volumes:
       - control_db_data:/var/lib/mysql
     expose:
@@ -74,6 +76,10 @@ services:
       MYSQL_DB: "${MYSQL_DB:?MYSQL_DB is required}"
       MYSQL_USER: "${MYSQL_USER:?MYSQL_USER is required}"
       MYSQL_PASSWORD: "${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}"
+      MAIL_SERVER: "${MAIL_SERVER:-smtp.gmail.com}"
+      MAIL_PORT: "${MAIL_PORT:-465}"
+      MAIL_USERNAME: "${MAIL_USERNAME:?MAIL_USERNAME is required}"
+      MAIL_PASSWORD: "${MAIL_PASSWORD:?MAIL_PASSWORD is required}"
       TENANT_DB_USER_HOST: "${TENANT_DB_USER_HOST:?TENANT_DB_USER_HOST is required}"
       TENANT_BASE_DOMAIN: "${TENANT_BASE_DOMAIN:?TENANT_BASE_DOMAIN is required}"
       TRUSTED_PROXY_COUNT: "${TRUSTED_PROXY_COUNT:-1}"
@@ -127,15 +133,22 @@ services:
       MYSQL_DB: "${MYSQL_DB:?MYSQL_DB is required}"
       MYSQL_USER: "${MYSQL_USER:?MYSQL_USER is required}"
       MYSQL_PASSWORD: "${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}"
+      MAIL_SERVER: "${MAIL_SERVER:-smtp.gmail.com}"
+      MAIL_PORT: "${MAIL_PORT:-465}"
+      MAIL_USERNAME: "${MAIL_USERNAME:?MAIL_USERNAME is required}"
+      MAIL_PASSWORD: "${MAIL_PASSWORD:?MAIL_PASSWORD is required}"
       PROVISIONING_MYSQL_USER: "${PROVISIONING_MYSQL_USER:?PROVISIONING_MYSQL_USER is required}"
       PROVISIONING_MYSQL_PASSWORD: "${PROVISIONING_MYSQL_PASSWORD:?PROVISIONING_MYSQL_PASSWORD is required}"
       TENANT_GRANT_MYSQL_USER: "${TENANT_GRANT_MYSQL_USER:?TENANT_GRANT_MYSQL_USER is required}"
       TENANT_GRANT_MYSQL_PASSWORD: "${TENANT_GRANT_MYSQL_PASSWORD:?TENANT_GRANT_MYSQL_PASSWORD is required}"
       TENANT_DB_USER_HOST: "${TENANT_DB_USER_HOST:?TENANT_DB_USER_HOST is required}"
+      TENANT_BASE_DOMAIN: "${TENANT_BASE_DOMAIN:?TENANT_BASE_DOMAIN is required}"
       TENANT_CREDENTIAL_PROVIDER: protected_file
       TENANT_DB_CREDENTIALS_FILE: /var/lib/smartstudy/tenant-credentials/tenant_credentials.json
       FILE_STORAGE_PROVIDER: "${FILE_STORAGE_PROVIDER:-local}"
       OBJECT_STORAGE_BUCKET: "${OBJECT_STORAGE_BUCKET:-}"
+      UPLOAD_BACKUP_BUCKET: "${UPLOAD_BACKUP_BUCKET:?UPLOAD_BACKUP_BUCKET is required}"
+      UPLOAD_BACKUP_ROLE_ARN: "${UPLOAD_BACKUP_ROLE_ARN:?UPLOAD_BACKUP_ROLE_ARN is required}"
       FILE_SCANNER_PROVIDER: "${FILE_SCANNER_PROVIDER:-command}"
       FILE_SCANNER_COMMAND: "${FILE_SCANNER_COMMAND:-clamdscan --stream --config-file=/etc/clamav/clamdscan.conf --no-summary}"
       ALLOW_UNSCANNED_UPLOADS: "0"
@@ -167,23 +180,32 @@ services:
     restart: unless-stopped
     command: ["celery", "-A", "scripts.celery_app.celery_app", "beat", "--loglevel=INFO"]
     environment:
+      TENANT_CREDENTIAL_PROVIDER: protected_file
+      TENANT_DB_CREDENTIALS_FILE: /var/lib/smartstudy/tenant-credentials/tenant_credentials.json
       FLASK_ENV: production
+      SECRET_KEY: "${SECRET_KEY:?SECRET_KEY is required}"
       MYSQL_HOST: control-db
       MYSQL_PORT: "3306"
       MYSQL_DB: "${MYSQL_DB:?MYSQL_DB is required}"
       MYSQL_USER: "${MYSQL_USER:?MYSQL_USER is required}"
       MYSQL_PASSWORD: "${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}"
+      TENANT_DB_USER_HOST: "${TENANT_DB_USER_HOST:?TENANT_DB_USER_HOST is required}"
+      TENANT_BASE_DOMAIN: "${TENANT_BASE_DOMAIN:?TENANT_BASE_DOMAIN is required}"
       CELERY_BROKER_URL: "redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/0"
       CELERY_RESULT_BACKEND: "redis://:${REDIS_PASSWORD}@redis:6379/1"
       CELERY_EAGER: "0"
       PRIVATE_UPLOAD_FOLDER: /app/instance/private_uploads
       FILE_STORAGE_PROVIDER: "${FILE_STORAGE_PROVIDER:-local}"
-      UPLOAD_RETENTION_DAYS: "${UPLOAD_RETENTION_DAYS:?UPLOAD_RETENTION_DAYS is required}"
+      FILE_SCANNER_PROVIDER: "${FILE_SCANNER_PROVIDER:-command}"
+      FILE_SCANNER_COMMAND: "${FILE_SCANNER_COMMAND:-clamdscan --stream --config-file=/etc/clamav/clamdscan.conf --no-summary}"
       UPLOAD_BACKUP_BUCKET: "${UPLOAD_BACKUP_BUCKET:?UPLOAD_BACKUP_BUCKET is required}"
+      UPLOAD_BACKUP_ROLE_ARN: "${UPLOAD_BACKUP_ROLE_ARN:?UPLOAD_BACKUP_ROLE_ARN is required}"
+      UPLOAD_RETENTION_DAYS: "${UPLOAD_RETENTION_DAYS:?UPLOAD_RETENTION_DAYS is required}"
       UPLOAD_BACKUP_PREFIX: "${UPLOAD_BACKUP_PREFIX:-private-uploads}"
       FILE_MAINTENANCE_TENANTS_JSON: "${FILE_MAINTENANCE_TENANTS_JSON:?FILE_MAINTENANCE_TENANTS_JSON is required}"
       PROVISION_AUDIT_FILE: /var/lib/smartstudy/provision/audit.log
     volumes:
+      - tenant_credentials:/var/lib/smartstudy/tenant-credentials
       - provision_data:/var/lib/smartstudy/provision
       - uploads_data:/app/instance/private_uploads
     depends_on:

@@ -40,3 +40,4 @@ if os.environ.get('CELERY_EAGER', '').lower() in ('1', 'true', 'yes'):
 # Register the scheduled Phase 4 maintenance tasks in worker and beat
 # processes without relying on implicit filesystem discovery.
 import scripts.file_maintenance  # noqa: E402,F401
+import scripts.provision_tasks  # noqa: E402,F401

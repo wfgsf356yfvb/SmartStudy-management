@@ -63,14 +63,21 @@ document.addEventListener('DOMContentLoaded', function() {
     if(themeBtn) themeBtn.addEventListener('click', toggleTheme);
     if(themeBtnMobile) themeBtnMobile.addEventListener('click', toggleTheme);
 
-    // --- HIGH PERFORMANCE AUTO TRANSLATION (Google Translate Integration) ---
+    // --- Google Translate integration ---
     const langBtn = document.getElementById('langToggle');
     const langBtnMobile = document.getElementById('langToggleMobile');
     
     // Add required div for Google API
     const translateDiv = document.createElement('div');
     translateDiv.id = 'google_translate_element';
-    translateDiv.style.display = 'none';
+    // Keep the widget off-screen instead of display:none; Google Translate
+    // does not reliably initialize a hidden select element.
+    translateDiv.style.position = 'fixed';
+    translateDiv.style.left = '-10000px';
+    translateDiv.style.top = '-10000px';
+    translateDiv.style.width = '1px';
+    translateDiv.style.height = '1px';
+    translateDiv.style.overflow = 'hidden';
     document.body.appendChild(translateDiv);
 
     // Add custom CSS to HIDE the Google Translate Top Bar toolbar but keep text changed
@@ -92,40 +99,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 'google_translate_element');
     }
 
-    // Dynamically Load Google Script
+    // Dynamically load Google Script once.
     const translateScript = document.createElement('script');
     translateScript.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
     document.body.appendChild(translateScript);
 
-    // Bulletproof Enterprise Translation using Cookie Logic
-    function setTranslateCookie(lang) {
-        const domain = window.location.hostname;
-        // Construct path based value e.g. /en/hi
-        const cookieVal = "/en/" + lang; 
-        
-        // Clear old ones first to prevent clash
-        document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-        document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + domain;
-        
-        // Set primary cookie
-        document.cookie = "googtrans=" + cookieVal + "; path=/;";
-        document.cookie = "googtrans=" + cookieVal + "; path=/; domain=" + domain;
-        
-        localStorage.setItem('lang', lang);
-    }
+    const supportedLanguages = new Set(['en', 'hi']);
 
-    function changeLanguage(langCode) {
-        setTranslateCookie(langCode);
-        // Standard Google DOM Trigger fallback
-        const select = document.querySelector('.goog-te-combo');
-        if (select) {
-            select.value = langCode;
-            select.dispatchEvent(new Event('change'));
-            setTimeout(() => { updateLangBtnLabels(langCode); }, 200);
-        } else {
-            // Force reload to pick up cookie if DOM node missing
-            window.location.reload();
-        }
+    // Google reads this cookie on the next page load. Do not set a domain
+    // cookie: it conflicts on localhost/IP hosts and can leave two cookies
+    // with different values on the production hostname.
+    function setTranslateCookie(lang) {
+        if (!supportedLanguages.has(lang)) return;
+        const cookieVal = `/en/${lang}`;
+        document.cookie = `googtrans=${cookieVal}; path=/; SameSite=Lax`;
+        localStorage.setItem('lang', lang);
     }
 
     function updateLangBtnLabels(lang) {
@@ -133,21 +121,41 @@ document.addEventListener('DOMContentLoaded', function() {
         if(langBtnMobile) langBtnMobile.innerText = lang === 'en' ? 'अ' : 'A';
     }
 
+    function applyGoogleLanguage(langCode) {
+        const select = document.querySelector('.goog-te-combo');
+        if (select) {
+            select.value = langCode;
+            select.dispatchEvent(new Event('change'));
+            sessionStorage.removeItem('translate-reload');
+            updateLangBtnLabels(langCode);
+            return true;
+        }
+        return false;
+    }
+
     let currentLang = localStorage.getItem('lang') || 'en';
-    
+
     function handleLangClick() {
         currentLang = currentLang === 'en' ? 'hi' : 'en';
-        // Set it and reload is most secure for full page
         setTranslateCookie(currentLang);
-        window.location.reload();
+        updateLangBtnLabels(currentLang);
+        if (!applyGoogleLanguage(currentLang)) {
+            // One reload lets Google consume the cookie. The session guard
+            // prevents an endless reload loop if the external script fails.
+            const reloadKey = `translate-reload:${currentLang}`;
+            if (sessionStorage.getItem('translate-reload') !== reloadKey) {
+                sessionStorage.setItem('translate-reload', reloadKey);
+                window.location.reload();
+            }
+        }
     }
 
     if(langBtn) langBtn.addEventListener('click', handleLangClick);
     if(langBtnMobile) langBtnMobile.addEventListener('click', handleLangClick);
 
-    // Auto restore language on init
-    setTimeout(() => {
-        if(currentLang === 'hi') changeLanguage('hi');
-        else updateLangBtnLabels('en');
-    }, 1000);
+    // Restore the selected language after the widget has had time to load.
+    updateLangBtnLabels(currentLang);
+    if (currentLang === 'hi') {
+        setTimeout(() => applyGoogleLanguage('hi'), 1000);
+    }
 });

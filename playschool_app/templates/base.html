@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{% block title %}ðŸŒˆ PlaySchool{% endblock %}</title>
+    <title>{% block title %}🌈 PlaySchool{% endblock %}</title>
     <link
         href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&family=Nunito:wght@400;600;700&display=swap"
         rel="stylesheet">
@@ -21,7 +21,7 @@
     <!-- SIDEBAR NAV -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-brand">
-            <div class="brand-icon">ðŸŽ’</div>
+            <div class="brand-icon">🎒</div>
             <div>
                 <div class="brand-name">PlaySchool</div>
                 <div class="brand-sub">Learning Hub</div>
@@ -40,11 +40,11 @@
             <div>
                 <div class="user-name">{{ current_user.name if current_user else '' }}</div>
                 <div class="user-badge {{ session.get('role') }}">
-                    {% if session.get('role') == 'super_admin' %} ðŸ‘‘ Super Admin
+                    {% if session.get('role') == 'super_admin' %} 👑 Super Admin
                     {% else %}
                         {{ session.get('role','').capitalize() }}
-                        {% if current_user and current_user.class_level %} Â· {{ current_user.class_level.upper() }}{% endif %}
-                        {% if current_school %} <div style="font-size:10px; opacity: 0.8; margin-top: 2px;">ðŸ« {{ current_school.name }}</div>{% endif %}
+                        {% if current_user and current_user.class_level %} · {{ current_user.class_level.upper() }}{% endif %}
+                        {% if current_school %} <div style="font-size:10px; opacity: 0.8; margin-top: 2px;">🏫 {{ current_school.name }}</div>{% endif %}
                     {% endif %}
                 </div>
             </div>
@@ -52,151 +52,159 @@
         
         <!-- RELOCATED TOGGLES BELOW USER CARD -->
         <div class="sidebar-toggles-box" style="margin: 0 20px 15px; display: flex; gap: 10px; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
-            <button id="themeToggle" class="btn-icon" style="flex: 1; color: #fff; background: rgba(255,255,255,0.1); border-radius: 8px; border: none; cursor: pointer; padding: 8px 6px; font-size: 14px; display:flex; align-items:center; justify-content:center; gap:4px;" title="Toggle Dark/Light Mode">â˜€ï¸ Theme</button>
-            <button id="langToggle" class="btn-icon" style="flex: 1; color: #fff; background: rgba(255,255,255,0.1); border-radius: 8px; border: none; cursor: pointer; font-weight: bold; padding: 8px 6px; font-size: 14px; display:flex; align-items:center; justify-content:center; gap:4px;" title="Toggle Hindi/English">à¤… Lang</button>
+            <button id="themeToggle" class="btn-icon" style="flex: 1; color: #fff; background: rgba(255,255,255,0.1); border-radius: 8px; border: none; cursor: pointer; padding: 8px 6px; font-size: 14px; display:flex; align-items:center; justify-content:center; gap:4px;" title="Toggle Dark/Light Mode">☀️ Theme</button>
+            <button id="langToggle" class="btn-icon" style="flex: 1; color: #fff; background: rgba(255,255,255,0.1); border-radius: 8px; border: none; cursor: pointer; font-weight: bold; padding: 8px 6px; font-size: 14px; display:flex; align-items:center; justify-content:center; gap:4px;" title="Toggle Hindi/English">अ Lang</button>
         </div>
 
         <nav class="sidebar-nav">
             {% if session.get('role') == 'super_admin' %}
             <a href="{{ url_for('super_admin_dashboard') }}"
                 class="nav-item {% if request.endpoint=='super_admin_dashboard' %}active{% endif %}">
-                <span class="nav-icon">ðŸ‘‘</span> <span>Master Overview</span>
+                <span class="nav-icon">👑</span> <span>Master Overview</span>
             </a>
             <a href="{{ url_for('super_admin_schools') }}"
                 class="nav-item {% if request.endpoint=='super_admin_schools' %}active{% endif %}">
-                <span class="nav-icon">ðŸ«</span> <span>Manage Schools</span>
+                <span class="nav-icon">🏫</span> <span>Manage Schools</span>
+            </a>
+            <a href="{{ url_for('super_admin_provision') }}"
+                class="nav-item {% if request.endpoint=='super_admin_provision' %}active{% endif %}">
+                <span class="nav-icon">+</span> <span>Provision School</span>
+            </a>
+            <a href="{{ url_for('super_admin_provision_jobs') }}"
+                class="nav-item {% if request.endpoint=='super_admin_provision_jobs' %}active{% endif %}">
+                <span class="nav-icon">#</span> <span>Provision Jobs</span>
             </a>
             <a href="{{ url_for('super_admin_admins') }}"
                 class="nav-item {% if request.endpoint=='super_admin_admins' %}active{% endif %}">
-                <span class="nav-icon">ðŸ‘¥</span> <span>Manage Admins</span>
+                <span class="nav-icon">👥</span> <span>Manage Admins</span>
             </a>
             <a href="{{ url_for('super_admin_payments') }}"
                 class="nav-item {% if request.endpoint=='super_admin_payments' %}active{% endif %}">
-                <span class="nav-icon">ðŸ’°</span> <span>Review Payments</span>
+                <span class="nav-icon">💰</span> <span>Review Payments</span>
             </a>
             <a href="{{ url_for('super_admin_create_admin') }}"
                 class="nav-item {% if request.endpoint=='super_admin_create_admin' %}active{% endif %}">
-                <span class="nav-icon">ðŸ‘¤</span> <span>Add Admin</span>
+                <span class="nav-icon">👤</span> <span>Add Admin</span>
             </a>
 
             {% elif session.get('role') == 'admin' %}
             <a href="{{ url_for('admin_dashboard') }}"
                 class="nav-item {% if request.endpoint=='admin_dashboard' %}active{% endif %}">
-                <span class="nav-icon">ðŸ“Š</span> <span data-i18n="Dashboard">Dashboard</span>
+                <span class="nav-icon">📊</span> <span data-i18n="Dashboard">Dashboard</span>
             </a>
             <a href="{{ url_for('admin_users') }}"
                 class="nav-item {% if request.endpoint=='admin_users' %}active{% endif %}">
-                <span class="nav-icon">ðŸ‘¥</span> <span data-i18n="Manage Users">Manage Users</span>
+                <span class="nav-icon">👥</span> <span data-i18n="Manage Users">Manage Users</span>
             </a>
             <a href="{{ url_for('admin_reports') }}"
                 class="nav-item {% if request.endpoint=='admin_reports' %}active{% endif %}">
-                <span class="nav-icon">ðŸ“ˆ</span> <span data-i18n="Reports">Reports</span>
+                <span class="nav-icon">📈</span> <span data-i18n="Reports">Reports</span>
             </a>
             <a href="{{ url_for('admin_announcement') }}"
                 class="nav-item {% if request.endpoint=='admin_announcement' %}active{% endif %}">
-                <span class="nav-icon">ðŸ“¢</span> <span data-i18n="Announcements">Announcements</span>
+                <span class="nav-icon">📢</span> <span data-i18n="Announcements">Announcements</span>
             </a>
-            <a href="{{ url_for('admin_teacher_attendance') }}"
-                class="nav-item {% if request.endpoint=='admin_teacher_attendance' %}active{% endif %}">
-                <span class="nav-icon">ðŸ¤</span> <span data-i18n="Teacher Attendance">Staff Attendance</span>
+            <a href="{{ url_for('admin_student_attendance') }}"
+                class="nav-item {% if request.endpoint=='admin_student_attendance' %}active{% endif %}">
+                <span class="nav-icon">🤝</span> <span data-i18n="Student Attendance">Student Attendance</span>
             </a>
             <a href="{{ url_for('admin_fee_payments') }}"
                 class="nav-item {% if request.endpoint=='admin_fee_payments' %}active{% endif %}">
-                <span class="nav-icon">ðŸ’µ</span> <span>Student Fee Payments</span>
+                <span class="nav-icon">💵</span> <span>Student Fee Payments</span>
             </a>
             <a href="{{ url_for('admin_fees') }}"
                 class="nav-item {% if request.endpoint=='admin_fees' %}active{% endif %}">
-                <span class="nav-icon">ðŸ’°</span> <span>Fee Structure</span>
+                <span class="nav-icon">💰</span> <span>Fee Structure</span>
             </a>
             <a href="{{ url_for('admin_fee_payment_config') }}"
                 class="nav-item {% if request.endpoint=='admin_fee_payment_config' %}active{% endif %}">
-                <span class="nav-icon">ðŸ¦</span> <span>School Fee Payment Settings</span>
+                <span class="nav-icon">🏦</span> <span>School Fee Payment Settings</span>
             </a>
             <a href="{{ url_for('admin_billing') }}"
                 class="nav-item {% if request.endpoint=='admin_billing' %}active{% endif %}">
-                <span class="nav-icon">ðŸ’³</span> <span>School Subscription</span>
+                <span class="nav-icon">💳</span> <span>School Subscription</span>
             </a>
 
             {% elif session.get('role') == 'teacher' %}
             <a href="{{ url_for('teacher_dashboard') }}"
                 class="nav-item {% if request.endpoint=='teacher_dashboard' %}active{% endif %}">
-                <span class="nav-icon">ðŸ </span> <span data-i18n="Dashboard">Dashboard</span>
+                <span class="nav-icon">🏠</span> <span data-i18n="Dashboard">Dashboard</span>
             </a>
             <a href="{{ url_for('teacher_homework') }}"
                 class="nav-item {% if 'homework' in request.endpoint %}active{% endif %}">
-                <span class="nav-icon">ðŸ“</span> <span data-i18n="Homework">Homework</span>
+                <span class="nav-icon">📝</span> <span data-i18n="Homework">Homework</span>
             </a>
             <a href="{{ url_for('teacher_announcement') }}"
                 class="nav-item {% if request.endpoint=='teacher_announcement' %}active{% endif %}">
-                <span class="nav-icon">ðŸ“¢</span> <span>Make Announcement</span>
+                <span class="nav-icon">📢</span> <span>Make Announcement</span>
             </a>
             <a href="{{ url_for('teacher_progress') }}"
                 class="nav-item {% if request.endpoint=='teacher_progress' %}active{% endif %}">
-                <span class="nav-icon">ðŸ“Š</span> <span data-i18n="Student Progress">Student Progress</span>
+                <span class="nav-icon">📊</span> <span data-i18n="Student Progress">Student Progress</span>
             </a>
             <a href="{{ url_for('weekly_report') }}"
                 class="nav-item {% if request.endpoint=='weekly_report' %}active{% endif %}">
-                <span class="nav-icon">ðŸ“…</span> <span data-i18n="Weekly Report">Weekly Report</span>
+                <span class="nav-icon">📅</span> <span data-i18n="Weekly Report">Weekly Report</span>
             </a>
             <a href="{{ url_for('teacher_attendance') }}"
                 class="nav-item {% if request.endpoint=='teacher_attendance' %}active{% endif %}">
-                <span class="nav-icon">âœ”ï¸</span> <span data-i18n="Attendance">Class Attendance</span>
+                <span class="nav-icon">✔️</span> <span data-i18n="Attendance">Class Attendance</span>
             </a>
             <a href="{{ url_for('my_attendance_view') }}"
                 class="nav-item {% if request.endpoint=='my_attendance_view' %}active{% endif %}">
-                <span class="nav-icon">ðŸ“…</span> <span data-i18n="My Attendance">My Attendance</span>
+                <span class="nav-icon">📅</span> <span data-i18n="My Attendance">My Attendance</span>
             </a>
 
             {% elif session.get('role') == 'student' %}
             <a href="{{ url_for('student_dashboard') }}"
                 class="nav-item {% if request.endpoint=='student_dashboard' %}active{% endif %}">
-                <span class="nav-icon">ðŸ </span> <span data-i18n="My Home">My Home</span>
+                <span class="nav-icon">🏠</span> <span data-i18n="My Home">My Home</span>
             </a>
             <a href="{{ url_for('student_smart_study') }}"
                 class="nav-item {% if request.endpoint=='student_smart_study' %}active{% endif %}">
-                <span class="nav-icon">ðŸ“–</span> <span>Smart Study Table</span>
+                <span class="nav-icon">📖</span> <span>Smart Study Table</span>
             </a>
             <a href="{{ url_for('student_homework') }}"
                 class="nav-item {% if 'homework' in request.endpoint %}active{% endif %}">
-                <span class="nav-icon">ðŸ“š</span> <span data-i18n="Homework">Homework</span>
+                <span class="nav-icon">📚</span> <span data-i18n="Homework">Homework</span>
             </a>
             <a href="{{ url_for('student_games') }}"
                 class="nav-item {% if request.endpoint=='student_games' %}active{% endif %}">
-                <span class="nav-icon">ðŸŽ®</span> <span data-i18n="Fun Games">Fun Games</span>
+                <span class="nav-icon">🎮</span> <span data-i18n="Fun Games">Fun Games</span>
             </a>
             <a href="{{ url_for('student_progress') }}"
                 class="nav-item {% if request.endpoint=='student_progress' %}active{% endif %}">
-                <span class="nav-icon">â­</span> <span data-i18n="My Progress">My Progress</span>
+                <span class="nav-icon">⭐</span> <span data-i18n="My Progress">My Progress</span>
             </a>
             <a href="{{ url_for('student_attendance') }}"
                 class="nav-item {% if request.endpoint=='student_attendance' %}active{% endif %}">
-                <span class="nav-icon">ðŸ“…</span> <span data-i18n="Attendance">My Attendance</span>
+                <span class="nav-icon">📅</span> <span data-i18n="Attendance">My Attendance</span>
             </a>
             <a href="{{ url_for('student_fees') }}"
                 class="nav-item {% if request.endpoint=='student_fees' %}active{% endif %}">
-                <span class="nav-icon">ðŸ’°</span> <span>Fee Payment & Structure</span>
+                <span class="nav-icon">💰</span> <span>Fee Payment & Structure</span>
             </a>
             {% endif %}
 
             <a href="{{ url_for('profile') }}" class="nav-item {% if request.endpoint=='profile' %}active{% endif %}">
-                <span class="nav-icon">ðŸ‘¤</span> <span data-i18n="My Profile">My Profile</span>
+                <span class="nav-icon">👤</span> <span data-i18n="My Profile">My Profile</span>
             </a>
         </nav>
 
         <a href="{{ url_for('logout') }}" class="sidebar-logout" data-i18n="logout">
-            <span>ðŸšª</span> Logout
+            <span>🚪</span> Logout
         </a>
     </div>
 
     <!-- MOBILE TOPBAR -->
     <div class="topbar">
-        <button class="menu-toggle" onclick="toggleSidebar()">â˜°</button>
-        <div class="topbar-brand">ðŸŽ’ PlaySchool</div>
+        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <div class="topbar-brand">🎒 PlaySchool</div>
         <div style="margin-left: auto; display: flex; gap: 8px;">
             <button id="themeToggleMobile" class="btn-icon"
-                style="color: #fff; background: rgba(255,255,255,0.1); width: 30px; height: 30px; font-size: 14px;">â˜€ï¸</button>
+                style="color: #fff; background: rgba(255,255,255,0.1); width: 30px; height: 30px; font-size: 14px;">☀️</button>
             <button id="langToggleMobile" class="btn-icon"
-                style="color: #fff; background: rgba(255,255,255,0.1); width: 30px; height: 30px; font-size: 14px; font-weight: bold;">à¤…</button>
+                style="color: #fff; background: rgba(255,255,255,0.1); width: 30px; height: 30px; font-size: 14px; font-weight: bold;">अ</button>
         </div>
         <div class="topbar-user" style="margin-left: 8px;">{{ session.get('name','')[:10] }}</div>
     </div>
@@ -212,10 +220,10 @@
             <div class="flash-container">
                 {% for cat, msg in messages %}
                 <div class="flash flash-{{ cat }}">
-                    {% if cat == 'success' %}âœ…{% elif cat == 'danger' %}âŒ{% elif cat == 'warning' %}âš ï¸{% else %}â„¹ï¸{%
+                    {% if cat == 'success' %}✅{% elif cat == 'danger' %}❌{% elif cat == 'warning' %}⚠️{% else %}ℹ️{%
                     endif %}
                     {{ msg }}
-                    <button onclick="this.parentElement.remove()">Ã—</button>
+                    <button onclick="this.parentElement.remove()">×</button>
                 </div>
                 {% endfor %}
             </div>
