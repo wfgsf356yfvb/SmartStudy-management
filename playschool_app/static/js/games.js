@@ -184,7 +184,7 @@ function updateTimerBar() {
     if (!bar) return;
     
     const pct = (gameState.timeLeft / gameState.maxTime) * 100;
-    bar.style.width = \`\${pct}%\`;
+    bar.style.width = `${pct}%`;
     
     if (pct < 30) {
         bar.style.backgroundColor = '#EF4444'; // Red
@@ -231,16 +231,16 @@ function startGameRound() {
     const gameArea = document.getElementById('gameArea');
     const hearts = '❤️'.repeat(gameState.lives) + '🖤'.repeat(3 - gameState.lives);
     
-    const progress = \`
+    const progress = `
         <div class="game-header-top" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
-            <div class="game-level" style="font-weight:bold; font-size:16px;">Level \${gameState.level}/\${gameState.maxLevel}</div>
-            <div class="game-lives" style="font-size:16px;">\${hearts}</div>
-            <div class="game-score" style="font-weight:bold; font-size:16px;">⭐ \${gameState.score}</div>
+            <div class="game-level" style="font-weight:bold; font-size:16px;">Level ${gameState.level}/${gameState.maxLevel}</div>
+            <div class="game-lives" style="font-size:16px;">${hearts}</div>
+            <div class="game-score" style="font-weight:bold; font-size:16px;">⭐ ${gameState.score}</div>
         </div>
         <div class="game-timer-container" style="width: 100%; background: #e0e0e0; height: 10px; border-radius: 5px; margin-bottom: 15px; overflow:hidden;">
             <div id="gameTimerBar" style="width: 100%; height: 100%; background: #10B981; transition: width 1s linear, background-color 0.3s;"></div>
         </div>
-    \`;
+    `;
 
     if (gameState.gameKey === 'colorMatch') renderColorMatch(gameArea, progress);
     else if (gameState.gameKey === 'countAnimals') renderCountAnimals(gameArea, progress);
@@ -267,21 +267,21 @@ function renderColorMatch(gameArea, progress) {
     const btnSize = cls === 'nursery' ? '100px' : '80px';
     const fontSize = cls === 'nursery' ? '46px' : '36px';
 
-    gameArea.innerHTML = \`
-        \${progress}
+    gameArea.innerHTML = `
+        ${progress}
         <div class="game-question">
-            <div class="game-q-text">Tap the <strong style="color:\${correct.hex}">\${correct.name}</strong> colour!</div>
-            <div class="color-target" style="background:\${correct.hex};box-shadow:0 0 40px \${correct.hex}66">&nbsp;</div>
+            <div class="game-q-text">Tap the <strong style="color:${correct.hex}">${correct.name}</strong> colour!</div>
+            <div class="color-target" style="background:${correct.hex};box-shadow:0 0 40px ${correct.hex}66">&nbsp;</div>
         </div>
         <div class="game-choices color-choices">
-            \${choices.map(c => \`
-                <button class="color-btn" style="background:\${c.hex}; width:\${btnSize}; height:\${btnSize}; font-size:\${fontSize}" 
-                    onclick="checkAnswer(this, '\${c.name}', '\${correct.name}')">
-                    \${c.emoji}
+            ${choices.map(c => `
+                <button class="color-btn" style="background:${c.hex}; width:${btnSize}; height:${btnSize}; font-size:${fontSize}"
+                    onclick="checkAnswer(this, '${c.name}', '${correct.name}')">
+                    ${c.emoji}
                 </button>
-            \`).join('')}
+            `).join('')}
         </div>
-    \`;
+    `;
 }
 
 // ─── COUNT ANIMALS ─────────────────────────────
@@ -304,20 +304,20 @@ function renderCountAnimals(gameArea, progress) {
     const animalRow = Array(count).fill(animal).join(' ');
     const btnSize = cls === 'nursery' ? '80px' : '72px';
 
-    gameArea.innerHTML = \`
-        \${progress}
+    gameArea.innerHTML = `
+        ${progress}
         <div class="game-question">
             <div class="game-q-text">How many animals are there? 🐾</div>
-            <div class="animal-display">\${animalRow}</div>
+            <div class="animal-display">${animalRow}</div>
         </div>
         <div class="game-choices number-choices">
-            \${choices.map(n => \`
-                <button class="number-btn" style="width:\${btnSize}; height:\${btnSize};" onclick="checkAnswer(this, '\${n}', '\${count}')">
-                    \${n}
+            ${choices.map(n => `
+                <button class="number-btn" style="width:${btnSize}; height:${btnSize};" onclick="checkAnswer(this, '${n}', '${count}')">
+                    ${n}
                 </button>
-            \`).join('')}
+            `).join('')}
         </div>
-    \`;
+    `;
 }
 
 // ─── ABC FUN ─────────────────────────────
@@ -337,20 +337,20 @@ function renderAbcFun(gameArea, progress) {
     const em = emojis[correct] || '🔤';
     const displaySize = cls === 'nursery' ? '120px' : '100px';
 
-    gameArea.innerHTML = \`
-        \${progress}
+    gameArea.innerHTML = `
+        ${progress}
         <div class="game-question">
-            <div class="game-q-text">Which letter is this? \${em}</div>
-            <div class="letter-display" style="font-size:\${displaySize}">\${correct}</div>
+            <div class="game-q-text">Which letter is this? ${em}</div>
+            <div class="letter-display" style="font-size:${displaySize}">${correct}</div>
         </div>
         <div class="game-choices letter-choices">
-            \${choices.map(l => \`
-                <button class="letter-btn" onclick="checkAnswer(this, '\${l}', '\${correct}')">
-                    \${l}
+            ${choices.map(l => `
+                <button class="letter-btn" onclick="checkAnswer(this, '${l}', '${correct}')">
+                    ${l}
                 </button>
-            \`).join('')}
+            `).join('')}
         </div>
-    \`;
+    `;
 }
 
 // ─── SHAPE SORTER ─────────────────────────────
@@ -364,21 +364,21 @@ function renderShapeSorter(gameArea, progress) {
     const cls = getStudentClass();
     const shapeSize = cls === 'nursery' ? '100px' : '80px';
 
-    gameArea.innerHTML = \`
-        \${progress}
+    gameArea.innerHTML = `
+        ${progress}
         <div class="game-question">
-            <div class="game-q-text">Find the <strong>\${correct.name}</strong>!</div>
-            <div class="shape-display" style="font-size:\${shapeSize}">\${correct.emoji}</div>
+            <div class="game-q-text">Find the <strong>${correct.name}</strong>!</div>
+            <div class="shape-display" style="font-size:${shapeSize}">${correct.emoji}</div>
         </div>
         <div class="game-choices shape-choices">
-            \${choices.map(s => \`
-                <button class="shape-btn" onclick="checkAnswer(this, '\${s.name}', '\${correct.name}')">
-                    <div class="shape-emoji">\${s.emoji}</div>
-                    <div class="shape-name">\${s.name}</div>
+            ${choices.map(s => `
+                <button class="shape-btn" onclick="checkAnswer(this, '${s.name}', '${correct.name}')">
+                    <div class="shape-emoji">${s.emoji}</div>
+                    <div class="shape-name">${s.name}</div>
                 </button>
-            \`).join('')}
+            `).join('')}
         </div>
-    \`;
+    `;
 }
 
 // ─── FRUIT MATH ─────────────────────────────
@@ -403,18 +403,18 @@ function renderFruitMath(gameArea, progress) {
     
     const choices = shuffle([ans, ...Array.from(wrong)]);
 
-    gameArea.innerHTML = \`
-        \${progress}
+    gameArea.innerHTML = `
+        ${progress}
         <div class="game-question">
             <div class="game-q-text">Add the Fruits!</div>
             <div class="math-visual" style="font-size: 32px; background: #FFF5F5; padding: 16px; border-radius: 12px; letter-spacing: 3px;">
-                \${fruit.repeat(num1)} <span style="color:#888">+</span> \${fruit.repeat(num2)}
+                ${fruit.repeat(num1)} <span style="color:#888">+</span> ${fruit.repeat(num2)}
             </div>
         </div>
         <div class="game-choices number-choices">
-            \${choices.map(n => \`<button class="number-btn" onclick="checkAnswer(this, '\${n}', '\${ans}')">\${n}</button>\`).join('')}
+            ${choices.map(n => `<button class="number-btn" onclick="checkAnswer(this, '${n}', '${ans}')">${n}</button>`).join('')}
         </div>
-    \`;
+    `;
 }
 
 // ─── PATTERN LOGIC ─────────────────────────────
@@ -438,16 +438,16 @@ function renderPatternLogic(gameArea, progress) {
     let wrong = shuffle(c.filter(x => x !== ans)).slice(0, optionsCount - 1);
     const choices = shuffle([ans, ...wrong]);
     
-    gameArea.innerHTML = \`
-        \${progress}
+    gameArea.innerHTML = `
+        ${progress}
         <div class="game-question">
             <div class="game-q-text">Complete the pattern! What is next?</div>
-            <div class="pattern-line" style="font-size: 38px; margin: 10px 0;">\${pattern.join(' ')} <span style="border:2px dashed #aaa; border-radius:50%; padding:4px 10px; background:#f4f4f4;">?</span></div>
+            <div class="pattern-line" style="font-size: 38px; margin: 10px 0;">${pattern.join(' ')} <span style="border:2px dashed #aaa; border-radius:50%; padding:4px 10px; background:#f4f4f4;">?</span></div>
         </div>
         <div class="game-choices color-choices">
-            \${choices.map(item => \`<button class="color-btn" style="background:#fff" onclick="checkAnswer(this, '\${item}', '\${ans}')">\${item}</button>\`).join('')}
+            ${choices.map(item => `<button class="color-btn" style="background:#fff" onclick="checkAnswer(this, '${item}', '${ans}')">${item}</button>`).join('')}
         </div>
-    \`;
+    `;
 }
 
 // ─── BIG vs SMALL ─────────────────────────────
@@ -485,15 +485,15 @@ function renderBigSmall(gameArea, progress) {
     
     const choices = shuffle(currentChoices);
     
-    gameArea.innerHTML = \`
-        \${progress}
+    gameArea.innerHTML = `
+        ${progress}
         <div class="game-question">
-            <div class="game-q-text">\${questionText}</div>
+            <div class="game-q-text">${questionText}</div>
         </div>
         <div class="game-choices shape-choices" style="display:flex; justify-content:center; gap: 20px;">
-            \${choices.map(item => \`<button class="shape-btn" onclick="checkAnswer(this, '\${item}', '\${ans}')" style="padding:30px;"><div style="font-size:60px">\${item}</div></button>\`).join('')}
+            ${choices.map(item => `<button class="shape-btn" onclick="checkAnswer(this, '${item}', '${ans}')" style="padding:30px;"><div style="font-size:60px">${item}</div></button>`).join('')}
         </div>
-    \`;
+    `;
 }
 
 // ─── ODD ONE OUT ─────────────────────────────
@@ -507,15 +507,15 @@ function renderOddOneOut(gameArea, progress) {
     
     const choices = shuffle([...correctItems, oddItem]);
 
-    gameArea.innerHTML = \`
-        \${progress}
+    gameArea.innerHTML = `
+        ${progress}
         <div class="game-question">
             <div class="game-q-text">Find the <strong>Odd One Out</strong>! (Not like others)</div>
         </div>
         <div class="game-choices color-choices">
-            \${choices.map(i => \`<button class="color-btn" style="background:#fff; font-size:40px;" onclick="checkAnswer(this, '\${i}', '\${oddItem}')">\${i}</button>\`).join('')}
+            ${choices.map(i => `<button class="color-btn" style="background:#fff; font-size:40px;" onclick="checkAnswer(this, '${i}', '${oddItem}')">${i}</button>`).join('')}
         </div>
-    \`;
+    `;
 }
 
 // ─── VEHICLE MATCH ─────────────────────────────
@@ -525,15 +525,15 @@ function renderVehicleMatch(gameArea, progress) {
     const optionsCount = Math.min(getOptionsCount(gameState.level), vehicles.length);
     const choices = shuffle([correct, ...getRandomFrom(vehicles.filter(v=>v.name!==correct.name), optionsCount - 1)]);
 
-    gameArea.innerHTML = \`
-        \${progress}
+    gameArea.innerHTML = `
+        ${progress}
         <div class="game-question">
-            <div class="game-q-text">Where is the <strong style="color:var(--primary)">\${correct.name}</strong>?</div>
+            <div class="game-q-text">Where is the <strong style="color:var(--primary)">${correct.name}</strong>?</div>
         </div>
         <div class="game-choices color-choices">
-            \${choices.map(v => \`<button class="color-btn" style="background:#fff; font-size:44px;" onclick="checkAnswer(this, '\${v.name}', '\${correct.name}')">\${v.emoji}</button>\`).join('')}
+            ${choices.map(v => `<button class="color-btn" style="background:#fff; font-size:44px;" onclick="checkAnswer(this, '${v.name}', '${correct.name}')">${v.emoji}</button>`).join('')}
         </div>
-    \`;
+    `;
 }
 
 // ─── PLANET TRIVIA ─────────────────────────────
@@ -543,16 +543,16 @@ function renderPlanetTrivia(gameArea, progress) {
     const optionsCount = Math.min(getOptionsCount(gameState.level), items.length);
     const choices = shuffle([target, ...getRandomFrom(items.filter(i=>i!==target), optionsCount - 1)]);
     
-    gameArea.innerHTML = \`
-        \${progress}
+    gameArea.innerHTML = `
+        ${progress}
         <div class="game-question">
             <div class="game-q-text">Match the Cosmic Object!</div>
-            <div style="font-size: 65px; margin: 15px auto;">\${target}</div>
+            <div style="font-size: 65px; margin: 15px auto;">${target}</div>
         </div>
         <div class="game-choices color-choices">
-            \${choices.map(i => \`<button class="color-btn" style="background:#fff; font-size:40px;" onclick="checkAnswer(this, '\${i}', '\${target}')">\${i}</button>\`).join('')}
+            ${choices.map(i => `<button class="color-btn" style="background:#fff; font-size:40px;" onclick="checkAnswer(this, '${i}', '${target}')">${i}</button>`).join('')}
         </div>
-    \`;
+    `;
 }
 
 // ─── CHECK ANSWER ─────────────────────────────
@@ -600,7 +600,7 @@ function checkAnswer(btn, selected, correct) {
         gameState.combo = 0;
         
         allBtns.forEach(b => {
-            if (b.onclick && (b.onclick.toString().includes(\`'\${correct}'\`) || b.onclick.toString().includes(\`"\${correct}"\`))) {
+            if (b.onclick && (b.onclick.toString().includes(`'${correct}'`) || b.onclick.toString().includes(`"${correct}"`))) {
                 b.classList.add('correct-ans');
             }
         });
@@ -618,13 +618,13 @@ function checkAnswer(btn, selected, correct) {
 
 function showLevelCelebration(callback) {
     const gameArea = document.getElementById('gameArea');
-    gameArea.innerHTML = \`
+    gameArea.innerHTML = `
         <div style="text-align:center; padding: 40px 20px;">
             <div style="font-size: 60px; animation: bounce 1s infinite;">🎉</div>
-            <h2 style="color: #10B981; font-size: 28px; margin: 20px 0;">Level \${gameState.level - 1} Complete!</h2>
-            <p style="font-size: 18px; color: #6B7280;">Get ready for Level \${gameState.level}...</p>
+            <h2 style="color: #10B981; font-size: 28px; margin: 20px 0;">Level ${gameState.level - 1} Complete!</h2>
+            <p style="font-size: 18px; color: #6B7280;">Get ready for Level ${gameState.level}...</p>
         </div>
-    \`;
+    `;
     setTimeout(callback, 2000);
 }
 
@@ -646,12 +646,16 @@ function showResult() {
     document.getElementById('resultEmoji').textContent  = emoji;
     document.getElementById('resultTitle').textContent  = title;
     document.getElementById('resultStars').textContent  = starsHtml;
-    document.getElementById('resultScore').textContent  = \`Score: \${gameState.score} | Reached Level \${Math.min(gameState.level, gameState.maxLevel)}\`;
+    document.getElementById('resultScore').textContent  = `Score: ${gameState.score} | Reached Level ${Math.min(gameState.level, gameState.maxLevel)}`;
 
     const gameName = GAMES[gameState.gameKey]?.name || gameState.gameKey;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
     fetch('/student/game/score', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
+        },
         body: JSON.stringify({ game_name: gameName, score: gameState.score, stars: finalStars, level: Math.min(gameState.level, gameState.maxLevel) })
     }).catch(() => {});
 }
@@ -695,7 +699,7 @@ function playSound(type) {
 // Add game styles dynamically
 document.addEventListener('DOMContentLoaded', () => {
     const style = document.createElement('style');
-    style.textContent = \`
+    style.textContent = `
         .combo-text {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             font-size: 30px; font-weight: bold; color: #F59E0B;
@@ -782,6 +786,6 @@ document.addEventListener('DOMContentLoaded', () => {
         .wrong-ans { 
             border:4px solid #EF4444 !important; opacity:.7;
         }
-    \`;
+    `;
     document.head.appendChild(style);
 });

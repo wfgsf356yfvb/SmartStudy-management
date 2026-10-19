@@ -262,6 +262,32 @@ def current_user():
     )
 
 
+def tenant_admin_author_id():
+    """Return a tenant-local author id for a centrally managed school admin."""
+    admin = current_user()
+    if not admin or session.get('role') != 'admin':
+        return session.get('user_id')
+
+    tenant_admin = query_db(
+        "SELECT id FROM users WHERE email=%s AND role='admin' AND school_id=%s",
+        (admin['email'], session.get('school_id')),
+        one=True,
+    )
+    if tenant_admin:
+        return tenant_admin['id']
+
+    return query_db(
+        "INSERT INTO users "
+        "(name,email,phone,password_hash,role,school_id,is_active) "
+        "VALUES (%s,%s,%s,%s,'admin',%s,1)",
+        (
+            admin['name'], admin['email'], admin.get('phone'),
+            admin['password_hash'], session.get('school_id'),
+        ),
+        commit=True,
+    )
+
+
 def storage_tenant():
     """Return a server-derived storage tenant label; never use browser input."""
     tenant = getattr(g, 'tenant', None)
@@ -577,7 +603,7 @@ def login():
             # Send OTP only if SMTP is configured. Do NOT reveal OTP in the UI.
             mail_sent = send_email(
                 email,
-                "Ã°Å¸â€Â Playschool App - Login Verification Code",
+                "PlaySchool App - Login Verification Code",
                 f"<h2>Hello, {user['name']}</h2><p>Your temporary code is: <b style='font-size:24px;'>{otp}</b></p><p>Thank you!</p>"
             )
             if not mail_sent:
@@ -620,7 +646,7 @@ def register():
         
         # Enforce Strong Password check Backend
         if len(password) < 8 or not any(c.isalpha() for c in password) or not any(c.isdigit() for c in password):
-            flash('Password must be minimum 8 characters and contain at least one letter and one number! Ã°Å¸â€Â', 'danger')
+            flash('Password must be minimum 8 characters and contain at least one letter and one number!', 'danger')
             return redirect(url_for('register'))
 
         submitted_role = request.form.get('role', 'student').strip().lower()
@@ -657,7 +683,7 @@ def register():
         otp = _new_otp()
         mail_sent = send_email(
             email,
-            "Ã°Å¸Å¡â‚¬ Account Registration Verification",
+            "PlaySchool App - Account Registration Verification",
             f"<h2>Welcome to Playschool, {name}!</h2><p>Your confirmation code is: <b style='font-size:24px;'>{otp}</b></p>"
         )
         if not mail_sent:
@@ -718,7 +744,7 @@ def verify_otp():
                 session.pop('otp_meta', None)
                 session.pop('otp_created_at', None)
                 session.pop('otp_attempts', None)
-                flash(f"OTP Verified! Welcome back {meta['name']}! Ã°Å¸Å½â€°", 'success')
+                flash(f"OTP verified. Welcome back, {meta['name']}!", 'success')
                 return redirect(url_for('dashboard'))
                 
             elif flow == 'register':
@@ -774,7 +800,7 @@ def forgot_password():
         otp = _new_otp()
         mail_sent = send_email(
             email,
-            "Ã°Å¸â€Â Playschool App - Password Reset Code",
+            "PlaySchool App - Password Reset Code",
             f"<h2>Password reset request</h2><p>Your password reset code is: <b style='font-size:24px;'>{otp}</b></p>"
         )
         if not mail_sent:
@@ -811,7 +837,7 @@ def reset_password():
             return redirect(url_for('reset_password'))
         # Strength check: min 8, at least one letter and one number
         if len(new_password) < 8 or not any(c.isalpha() for c in new_password) or not any(c.isdigit() for c in new_password):
-            flash('Password must be minimum 8 characters and contain at least one letter and one number! Ã°Å¸â€Â', 'danger')
+            flash('Password must be minimum 8 characters and contain at least one letter and one number!', 'danger')
             return redirect(url_for('reset_password'))
 
         pw_hash = generate_password_hash(new_password)
@@ -875,11 +901,11 @@ def profile():
             pw_hash = generate_password_hash(new_password)
             query_db("UPDATE users SET phone=%s, password_hash=%s, profile_pic=%s WHERE id=%s", 
                      (phone, pw_hash, profile_pic_name, session['user_id']), commit=True)
-            flash('Profile, password and picture saved! Ã¢Å“Â¨', 'success')
+            flash('Profile, password and picture saved!', 'success')
         else:
             query_db("UPDATE users SET phone=%s, profile_pic=%s WHERE id=%s", 
                      (phone, profile_pic_name, session['user_id']), commit=True)
-            flash('Profile details updated successfully! Ã¢Å“â€¦', 'success')
+            flash('Profile details updated successfully!', 'success')
             
         return redirect(url_for('profile'))
         
@@ -1284,11 +1310,12 @@ def admin_announcement():
         content = request.form['content']
         target_role = request.form.get('target_role', 'all')
         target_class = request.form.get('target_class', 'all')
+        author_id = tenant_admin_author_id()
         query_db(
             "INSERT INTO announcements (author_id,title,content,target_role,target_class) VALUES (%s,%s,%s,%s,%s)",
-            (session['user_id'], title, content, target_role, target_class), commit=True
+            (author_id, title, content, target_role, target_class), commit=True
         )
-        flash('Announcement posted! Ã°Å¸â€œÂ¢', 'success')
+        flash('Announcement posted successfully!', 'success')
         return redirect(url_for('admin_dashboard'))
     return render_template('admin/announcement.html')
 
@@ -1334,7 +1361,7 @@ def verify_fee_payment(payment_id):
     sid = session.get('school_id')
     query_db("UPDATE student_fee_payments SET status='paid', verified_by=%s WHERE id=%s AND school_id=%s AND payment_domain=%s",
              (session['user_id'], payment_id, sid, SCHOOL_FEE_DOMAIN), commit=True)
-    flash('Payment verified successfully! Ã¢Å“â€¦', 'success')
+    flash('Payment verified successfully!', 'success')
     return redirect(url_for('admin_fee_payments'))
 
 @app.route('/admin/fee-payments/reject/<int:payment_id>', methods=['POST'])
@@ -1413,7 +1440,7 @@ def create_homework():
             (session['user_id'], class_level, title, description, file_path, hw_type, due_date, max_marks),
             commit=True
         )
-        flash('Homework assigned successfully! Ã°Å¸â€œÂ', 'success')
+        flash('Homework assigned successfully!', 'success')
         return redirect(url_for('teacher_homework'))
     return render_template('teacher/create_homework.html')
 
@@ -1448,7 +1475,7 @@ def grade_submission(sub_id):
             "UPDATE submissions s JOIN homework h ON s.homework_id=h.id SET s.marks=%s, s.grade=%s, s.feedback=%s, s.graded_at=NOW() WHERE s.id=%s AND h.teacher_id=%s",
             (marks, grade, feedback, sub_id, session['user_id']), commit=True
         )
-        flash('Graded successfully! Ã¢Â­Â', 'success')
+        flash('Graded successfully!', 'success')
     return redirect(request.referrer or url_for('teacher_homework'))
 
 @app.route('/teacher/progress')
@@ -1501,7 +1528,7 @@ def weekly_report():
             marks_obtained=VALUES(marks_obtained), total_marks=VALUES(total_marks), 
             grade=VALUES(grade), teacher_remarks=VALUES(teacher_remarks)
         """, (student_id, session['user_id'], week, year, marks, total, grade, remarks), commit=True)
-        flash('Weekly progress saved! Ã°Å¸â€œÅ ', 'success')
+        flash('Weekly progress saved!', 'success')
         return redirect(url_for('weekly_report'))
     students = query_db("SELECT * FROM users WHERE role='student' AND school_id=%s ORDER BY class_level, name", (session.get('school_id'),))
     weekly   = query_db("""
@@ -1526,7 +1553,7 @@ def teacher_announcement():
             "INSERT INTO announcements (author_id,title,content,target_role,target_class,announcement_type) VALUES (%s,%s,%s,'student',%s,%s)",
             (session['user_id'], title, content, target_class, ann_type), commit=True
         )
-        flash('Announcement posted! Ã°Å¸â€œÂ¢', 'success')
+        flash('Announcement posted successfully!', 'success')
         return redirect(url_for('teacher_announcement'))
     
     announcements = query_db("""
@@ -1646,7 +1673,7 @@ def submit_homework(hw_id):
             "INSERT INTO submissions (homework_id,student_id,file_path,remarks) VALUES (%s,%s,%s,%s)",
             (hw_id, sid, file_path, remarks), commit=True
         )
-        flash('Homework submitted successfully! Great job! Ã°Å¸Å’Å¸', 'success')
+        flash('Homework submitted successfully! Great job!', 'success')
         return redirect(url_for('student_homework'))
     return render_template('student/submit_homework.html', hw=hw)
 
@@ -1857,7 +1884,7 @@ def student_pay_fee():
     """, (user['id'], sid, fee_id or None, payment_mode, amount, month_label,
           payment_method, receipt_no, receipt_file, SCHOOL_FEE_DOMAIN, notes), commit=True)
     
-    flash(f'Payment of Ã¢â€šÂ¹{amount} submitted! Receipt: {receipt_no}. Awaiting verification. Ã°Å¸â€™Â°', 'success')
+    flash(f'Payment of {amount} submitted! Receipt: {receipt_no}. Awaiting verification.', 'success')
     return redirect(url_for('student_fees'))
 
 # Private file serving. Legacy/static upload paths are never served here.
@@ -2309,7 +2336,7 @@ def super_admin_approve_payment(pid):
         return redirect(url_for('super_admin_payments'))
     try:
         _, settled = _activate_platform_subscription(pid, pay['school_id'])
-        flash(f"Payment approved! School extended to {settled.get('new_expiry')} Ã°Å¸â€™Â¸Ã¢Å“â€¦", "success")
+        flash(f"Payment approved! School extended to {settled.get('new_expiry')}.", "success")
     except PaymentValidationError:
         flash("Platform payment could not be settled.", "danger")
     return redirect(url_for('super_admin_payments'))
