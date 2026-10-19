@@ -169,6 +169,28 @@ def query_db(sql, args=(), one=False, commit=False, use_control=False):
         except Exception:
             pass
 
+
+def _valid_email(value):
+    return bool(re.fullmatch(r'[^@\s]+@[^@\s]+\.[^@\s]+', value or ''))
+
+
+def _valid_phone(value):
+    return bool(re.fullmatch(r'[0-9]{10}', value or ''))
+
+
+def _existing_control_school_id(value):
+    try:
+        school_id = int(value)
+    except (TypeError, ValueError):
+        return None
+    school = query_db(
+        'SELECT id FROM schools WHERE id=%s',
+        (school_id,),
+        one=True,
+        use_control=True,
+    )
+    return school_id if school else None
+
 # Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 # Auth Helpers
 # Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
@@ -586,9 +608,12 @@ def register():
         return ('Tenant registration is required.', 404)
     if request.method == 'POST':
         name        = request.form['name'].strip()
-        email       = request.form['email'].strip()
+        email       = request.form['email'].strip().lower()
         phone       = request.form.get('phone', '').strip()
-        if not phone.isdigit() or len(phone) != 10:
+        if not _valid_email(email):
+            flash('Please enter a valid email address.', 'danger')
+            return redirect(url_for('register'))
+        if not _valid_phone(phone):
             flash('Phone number must be exactly 10 digits!', 'danger')
             return redirect(url_for('register'))
         password    = request.form['password']
@@ -831,6 +856,9 @@ def profile():
     if request.method == 'POST':
         phone = request.form.get('phone', '').strip()
         new_password = request.form.get('password', '').strip()
+        if not _valid_phone(phone):
+            flash('Phone number must be exactly 10 digits!', 'danger')
+            return redirect(url_for('profile'))
         
         # Image Upload logic
         profile_pic_name = user['profile_pic']
@@ -2139,18 +2167,18 @@ def super_admin_provision_retry(job_id):
 def super_admin_create_admin():
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
-        email = request.form.get('email', '').strip()
+        email = request.form.get('email', '').strip().lower()
         phone = request.form.get('phone', '').strip()
         passw = request.form.get('password', '')
-        school_id = request.form.get('school_id')
-
-        school = provisioned_school_for_assignment(school_id)
+        school = provisioned_school_for_assignment(request.form.get('school_id'))
+        if not name or not _valid_email(email) or not _valid_phone(phone):
+            flash('Please provide a valid name, email, and 10-digit phone number.', 'danger')
+            return redirect(url_for('super_admin_create_admin'))
         if not school:
             flash('Select an active, provisioned tenant school.', 'danger')
             return redirect(url_for('super_admin_create_admin'))
-
-        if not passw:
-            flash('Admin password is required.', 'danger')
+        if len(passw) < 8 or not any(c.isalpha() for c in passw) or not any(c.isdigit() for c in passw):
+            flash('Password must be minimum 8 characters and contain at least one letter and one number!', 'danger')
             return redirect(url_for('super_admin_create_admin'))
 
         pw_hash = generate_password_hash(passw)
@@ -2164,9 +2192,8 @@ def super_admin_create_admin():
                 use_control=True,
             )
             flash('Admin created successfully for the school!', 'success')
-        except Exception as e:
-            flash(f'Error creating admin: {e}', 'danger')
-
+        except Exception:
+            flash('Unable to create admin. Please verify the details.', 'danger')
         return redirect(url_for('super_admin_dashboard'))
 
     schools = query_db(
@@ -2204,18 +2231,19 @@ def super_admin_edit_admin(admin_id):
 
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
-        email = request.form.get('email', '').strip()
+        email = request.form.get('email', '').strip().lower()
         phone = request.form.get('phone', '').strip()
         passw = request.form.get('password', '').strip()
-        school_id = request.form.get('school_id')
-
-        school = provisioned_school_for_assignment(school_id)
+        school = provisioned_school_for_assignment(request.form.get('school_id'))
+        if not name or not _valid_email(email) or not _valid_phone(phone):
+            flash('Please provide a valid name, email, and 10-digit phone number.', 'danger')
+            return redirect(url_for('super_admin_edit_admin', admin_id=admin_id))
         if not school:
             flash('Select an active, provisioned tenant school.', 'danger')
-            return redirect(
-                url_for('super_admin_edit_admin', admin_id=admin_id)
-            )
-
+            return redirect(url_for('super_admin_edit_admin', admin_id=admin_id))
+        if passw and (len(passw) < 8 or not any(c.isalpha() for c in passw) or not any(c.isdigit() for c in passw)):
+            flash('Password must be minimum 8 characters and contain at least one letter and one number!', 'danger')
+            return redirect(url_for('super_admin_edit_admin', admin_id=admin_id))
         if passw:
             pw_hash = generate_password_hash(passw)
             query_db(

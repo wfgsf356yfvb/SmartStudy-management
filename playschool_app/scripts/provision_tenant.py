@@ -293,6 +293,29 @@ def _cleanup_database_and_user(dbname, username, grant_host):
         conn.close()
 
 
+def create_tenant_school(dbname, school_id, name, address, subdomain):
+    """Create the tenant-local school row used by tenant foreign keys."""
+    conn = mysql.connector.connect(**_admin_config(dbname))
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO schools "
+            "(id,name,address,subdomain,subscription_status,valid_until) "
+            "VALUES (%s,%s,%s,%s,'active',DATE_ADD(CURRENT_DATE, INTERVAL 1 YEAR))",
+            (school_id, name, address, subdomain),
+        )
+        conn.commit()
+    except Exception as exc:
+        conn.rollback()
+        raise ProvisioningError('Tenant school mapping could not be created.') from exc
+    finally:
+        try:
+            cur.close()
+        except Exception:
+            pass
+        conn.close()
+
+
 def _safe_error(exc):
     return re.sub(r'(?i)(password|secret|token|api[_-]?key)\s*[:=]\s*[^,; ]+', r'\1=[redacted]', str(exc))
 
@@ -331,6 +354,7 @@ def provision_tenant(name, subdomain, address='', dbname=None, use_aws=False):
         user_created = True
         _create_tenant_user(dbname, username, password, grant_host)
         create_tables_for_db(dbname, connection_config=_admin_config())
+        create_tenant_school(dbname, control_school_id, name, address, subdomain)
         store_tenant_db_credentials(subdomain, {
             'host': MYSQL_HOST, 'port': MYSQL_PORT, 'database': dbname,
             'username': username, 'password': password,

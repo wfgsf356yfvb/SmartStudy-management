@@ -30,6 +30,7 @@ from scripts.provision_tenant import (  # noqa: E402
     _grant_config,
     _identifier,
     _validated_tenant_database_name,
+    create_tenant_school,
     ProvisioningError,
     tenant_database_name,
     tenant_database_username,
@@ -73,6 +74,29 @@ class CredentialProviderTests(unittest.TestCase):
 
 
 class ProvisioningSafetyTests(unittest.TestCase):
+    def test_tenant_school_mapping_is_created_after_schema_setup(self):
+        from unittest.mock import MagicMock
+        conn = MagicMock()
+        cursor = conn.cursor.return_value
+        with patch.dict(os.environ, {
+            'PROVISIONING_MYSQL_USER': 'smartstudy_provisioner',
+            'PROVISIONING_MYSQL_PASSWORD': 'provisioner-local-only',
+            'MYSQL_HOST': 'localhost',
+            'MYSQL_PORT': '3306',
+        }, clear=False), patch(
+            'scripts.provision_tenant.mysql.connector.connect', return_value=conn,
+        ) as connect:
+            create_tenant_school(
+                'playschool_tenant_alpha', 7, 'Alpha School', 'Address', 'alpha',
+            )
+
+        self.assertEqual(connect.call_args.kwargs['database'], 'playschool_tenant_alpha')
+        sql = cursor.execute.call_args.args[0]
+        self.assertIn('INSERT INTO schools', sql)
+        self.assertIn('subdomain', sql)
+        self.assertEqual(cursor.execute.call_args.args[1], (7, 'Alpha School', 'Address', 'alpha'))
+        conn.commit.assert_called_once_with()
+
     def test_grant_connection_is_separate_and_exactly_scoped(self):
         from unittest.mock import MagicMock
         admin_conn = MagicMock()
